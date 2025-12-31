@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Junior English Explorer</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Added Noto Sans TC for proper Traditional Chinese rendering -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Nunito', 'sans-serif'],
-              display: ['Fredoka', 'sans-serif'],
+              // English uses Nunito, Chinese falls back to Noto Sans TC / JhengHei
+              sans: ['Nunito', 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'sans-serif'],
+              // Headings use Fredoka, Chinese falls back to Noto Sans TC
+              display: ['Fredoka', 'Noto Sans TC', 'Microsoft JhengHei', 'sans-serif'],
             },
             colors: {
               brand: {
