@@ -13,9 +13,10 @@ const getApiKey = () => {
     return process.env.API_KEY;
   }
 
-  // 3. 【直接貼上金鑰】
-  // 請將你在 Google AI Studio 申請的 API Key 貼在下方單引號中
-  // ⚠️ 注意：請將下方的 '' 填入您的金鑰，例如 'AIzaSy...'
+  // 3. 【直接貼上金鑰】(最簡單的方法)
+  // 如果您沒有設定環境變數，請直接將金鑰貼在下方。
+  // 申請網址: https://aistudio.google.com/app/apikey
+  // ⚠️ 注意：請將下方的 '' 填入您的金鑰，看起來會像 const HARDCODED_KEY = 'AIzaSy...';
   const HARDCODED_KEY = 'AIzaSyD3wuxXWX31_m3YlVp9qviRS2oLlCGnOEs'; 
   
   return HARDCODED_KEY;
@@ -36,7 +37,7 @@ const handleApiError = (error: any) => {
   const msg = error.message || '';
   
   if (msg.includes('API key') || msg.includes('403')) {
-    throw new Error("API Key 無效或未設定。請檢查 services/geminiService.ts 檔案。");
+    throw new Error("API Key 無效或未設定。請檢查 services/geminiService.ts 檔案中的 HARDCODED_KEY。");
   } else if (msg.includes('429')) {
     throw new Error("API 使用量已達上限 (Quota Exceeded)，請稍後再試。");
   } else if (msg.includes('404')) {
