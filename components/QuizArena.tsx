@@ -25,8 +25,8 @@ export const QuizArena: React.FC = () => {
     try {
       const data = await generateQuiz(topic);
       setQuizData(data);
-    } catch (e) {
-      alert("The Quiz Master is busy. Try again! (測驗大師忙碌中，請稍後再試)");
+    } catch (e: any) {
+      alert(`⚠️ 發生錯誤:\n${e.message}\n\n請檢查 API Key 設定。`);
     } finally {
       setLoading(false);
     }
