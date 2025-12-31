@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { generateQuiz } from '../services/geminiService';
 import { QuizResponse } from '../types';
-import { Award, CheckCircle2, XCircle, RefreshCw, Loader2, BrainCircuit } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, BrainCircuit } from 'lucide-react';
 import canvasConfetti from 'canvas-confetti';
 
-export const QuizArena: React.FC = () => {
+interface QuizArenaProps {
+    onEarnXP: (amount: number) => void;
+}
+
+export const QuizArena: React.FC<QuizArenaProps> = ({ onEarnXP }) => {
   const [topic, setTopic] = useState('');
   const [quizData, setQuizData] = useState<QuizResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +43,7 @@ export const QuizArena: React.FC = () => {
     
     if (index === quizData?.questions[currentQuestionIdx].correctAnswerIndex) {
       setScore(s => s + 1);
+      onEarnXP(2); // Earn 2 water drops per correct answer
       canvasConfetti({
         particleCount: 100,
         spread: 70,
@@ -56,7 +61,15 @@ export const QuizArena: React.FC = () => {
         setShowResult(false);
     } else {
         // End of quiz
-        alert(`Quiz finished! Score: ${score + (selectedAnswer === quizData.questions[currentQuestionIdx].correctAnswerIndex ? 0 : 0)}/${quizData.questions.length}`);
+        const finalScore = score + (selectedAnswer === quizData.questions[currentQuestionIdx].correctAnswerIndex ? 0 : 0);
+        // Bonus for perfect score
+        if (finalScore === quizData.questions.length) {
+            alert(`Perfect Score! Bonus 5 Water Drops!`);
+            onEarnXP(5);
+        } else {
+            alert(`Quiz finished! Score: ${finalScore}/${quizData.questions.length}`);
+        }
+        
         setQuizData(null);
         setTopic('');
     }
@@ -74,6 +87,7 @@ export const QuizArena: React.FC = () => {
           <p className="text-slate-400 mb-6 text-sm">
             Test your knowledge! Pick a topic. <br/>
             <span className="text-xs text-slate-500">挑戰你的知識！輸入一個主題，例如：Travel (旅遊), Animals (動物)</span>
+            <br/><span className="text-xs text-blue-400 font-bold mt-2 block">Reward: 2 💧 / Correct Answer</span>
           </p>
           
           <input
