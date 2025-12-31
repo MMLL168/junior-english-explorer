@@ -50,7 +50,8 @@ const safetySettings = [
   { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
 ];
 
-const MODEL_NAME = "gemini-2.0-flash-lite-preview-02-05";
+// Switch to Gemini 3.0 Flash
+const MODEL_NAME = "gemini-3-flash-preview";
 
 // 動態建立 AI 實例 (避免 Key 更新後還用舊的)
 const getAIClient = () => {
@@ -59,6 +60,22 @@ const getAIClient = () => {
         throw new Error("API Key 未設定。請點擊右上角的設定按鈕輸入金鑰。");
     }
     return new GoogleGenAI({ apiKey: key });
+};
+
+// 新增：驗證 API Key 是否有效
+export const verifyApiKey = async (key: string): Promise<boolean> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: key });
+        // 嘗試產生一個極短的回應來測試連線
+        await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: "Hi",
+        });
+        return true;
+    } catch (error) {
+        console.error("API Verification Failed:", error);
+        return false;
+    }
 };
 
 const handleApiError = (error: any) => {
@@ -72,7 +89,7 @@ const handleApiError = (error: any) => {
   } else if (msg.includes('429')) {
     throw new Error("目前使用人數過多 (Quota Exceeded)，請休息 30 秒後再試。");
   } else if (msg.includes('404')) {
-    throw new Error(`找不到模型。您的 Key 可能不支援 ${MODEL_NAME}。`);
+    throw new Error(`找不到模型 (${MODEL_NAME})。您的 Key 可能不支援此模型。`);
   } else if (msg.includes('SAFETY') || msg.includes('blocked')) {
     throw new Error("內容被 AI 安全系統阻擋，請嘗試較溫和的主題。");
   } else if (msg.includes('fetch failed')) {
