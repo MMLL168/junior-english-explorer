@@ -96,12 +96,17 @@ export const generateStory = async (topic: string): Promise<StoryResponse> => {
     const response = await ai.models.generateContent({
       model: modelId,
       contents: `Write a fun, engaging short story for a 6th grade student (approx 11-12 years old) about: ${topic}. 
-      The English level should be CEFR A2/B1. 
-      Include 5 interesting vocabulary words highlighted in the story.`,
+      
+      Pedagogical Requirements:
+      1. English Level: CEFR A2/B1 (Intermediate for kids).
+      2. Length: 150-250 words.
+      3. Grammar Focus: Include clear examples of Past Simple and Present Perfect tenses appropriately.
+      4. Tone: Encouraging, exciting, and educational.
+      5. Vocabulary: Highlight 5 key words that are useful for this age group.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: storySchema,
-        systemInstruction: "You are an expert ESL teacher for children. You create engaging, age-appropriate content that is educational but fun."
+        systemInstruction: "You are an expert ESL teacher with 30 years of experience teaching 5th-7th graders. You create materials that are easy to read but educational."
       }
     });
 
@@ -123,7 +128,11 @@ export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
     const response = await ai.models.generateContent({
       model: modelId,
       contents: `Create a 5-question multiple choice vocabulary and grammar quiz for 6th graders based on the topic: ${topic}.
-      Important: The 'explanation' field must be in Traditional Chinese (繁體中文) to help the student understand.`,
+      
+      Requirements:
+      1. Difficulty: Mixed (2 easy, 2 medium, 1 hard).
+      2. Explanations: MUST be in Traditional Chinese (繁體中文) and very clear.
+      3. Focus: Test understanding of context and grammar usage.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: quizSchema,
@@ -145,14 +154,14 @@ export const correctSentence = async (sentence: string): Promise<string> => {
     const modelId = "gemini-3-flash-preview";
     if (!apiKey) throw new Error("API Key missing");
     
-    // We want a text response here, not JSON, to make it conversational
     const response = await ai.models.generateContent({
         model: modelId,
         contents: `The student wrote: "${sentence}". 
-        1. If there are grammar mistakes, explain them gently in Traditional Chinese (繁體中文) so the student understands.
-        2. Provide the corrected sentence in English.
-        3. If it's perfect, give a compliment in English and Chinese!
-        Keep the tone encouraging and friendly.`,
+        1. Identify any grammar or vocabulary mistakes.
+        2. Explain the mistake gently in Traditional Chinese (繁體中文).
+        3. Provide the corrected sentence in English.
+        4. Suggest a "Better Native Way" to say it if applicable.
+        5. Keep it short and encouraging.`,
         config: {
             systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You use Traditional Chinese to explain grammar concepts clearly."
         }
@@ -165,7 +174,7 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
     const modelId = "gemini-3-flash-preview";
     if (!apiKey) throw new Error("API Key missing");
     
-    // Construct simplified history for the prompt
+    // Construct simplified history
     let promptContext = history.map(h => `${h.role === 'user' ? 'Student' : 'Teacher'}: ${h.text}`).join('\n');
     promptContext += `\nStudent: ${newMessage}`;
 
@@ -173,15 +182,20 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
         model: modelId,
         contents: `Previous conversation:\n${promptContext}\n\nRespond as the Teacher.`,
         config: {
-            systemInstruction: `You are a friendly, enthusiastic English conversation partner for a shy Taiwanese junior high student (approx. 12 years old). 
-            Your goal is to build their confidence.
+            systemInstruction: `You are "Mr. Gemini", a fun and patient English teacher with 30 years of experience.
+            Target Audience: Taiwanese students (Grades 5-7, approx 11-13 years old).
             
-            Rules:
-            1. Keep your responses SHORT (1-2 sentences max).
-            2. Use simple vocabulary (A1/A2 level).
-            3. Always end with a simple question to keep the conversation going.
-            4. If the student makes a mistake, just reply with the correct natural phrasing in your response, do not explicitly correct them (e.g., if they say "I go park yesterday", you say "Oh, you went to the park yesterday? That sounds fun! Who did you go with?").
-            5. Be very encouraging.`
+            Core Rules:
+            1. Response Length: Short! (1-3 sentences max). Don't lecture.
+            2. Level: CEFR A2 (Simple words, clear grammar).
+            3. Engagement: ALWAYS end with a simple question to keep the student talking.
+            4. Correction: Do not strictly correct grammar unless it blocks understanding. Instead, use "Recasting" (repeat their idea back to them correctly).
+               Example: 
+               Student: "I go park yesterday."
+               Teacher: "Oh, you went to the park yesterday? That sounds fun! What did you do there?"
+            
+            Role Play Mode:
+            If the conversation seems to be a role-play (e.g., ordering food, asking directions), stay in character but keep the language simple.`
         }
     });
 
