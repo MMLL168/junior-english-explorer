@@ -9,9 +9,10 @@ export enum AppView {
 export interface VocabularyWord {
   word: string;
   definition: string;
-  chineseDefinition: string; // Added Chinese definition
+  chineseDefinition: string;
   exampleSentence: string;
-  pronunciation: string; // Phonetic or simple spelling
+  chineseExample: string; // Added Chinese translation for the example sentence
+  pronunciation: string;
 }
 
 export interface StoryResponse {
