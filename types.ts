@@ -5,6 +5,7 @@ export enum AppView {
   WRITING = 'WRITING',
   SPEAKING = 'SPEAKING',
   LISTENING = 'LISTENING',
+  GARDEN = 'GARDEN',
 }
 
 export interface VocabularyWord {
@@ -55,4 +56,26 @@ export interface ListeningChallenge {
     script: string; // The text to be spoken
     questions: ListeningQuestion[];
     difficulty: string;
+}
+
+// Gamification Types
+export interface Plant {
+    id: number;
+    stage: 0 | 1 | 2 | 3 | 4; // 0: Empty, 1: Seed, 2: Sprout, 3: Flower, 4: Fruit
+    type: 'apple' | 'sunflower' | 'cactus';
+    waterLevel: number; // Current water in this stage
+    waterNeeded: number; // Water needed to advance to next stage
+}
+
+export interface UserResources {
+    waterDrops: number;
+    stars: number;
+}
+
+export interface RewardCard {
+    id: string;
+    title: string;
+    cost: number;
+    icon: string;
+    color: string;
 }
