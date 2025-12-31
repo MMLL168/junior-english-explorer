@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { StoryMode } from './components/StoryMode';
 import { QuizArena } from './components/QuizArena';
 import { WritingLab } from './components/WritingLab';
 import { SpeakingDojo } from './components/SpeakingDojo';
+import { ApiKeySetup } from './components/ApiKeySetup';
+import { hasValidKey } from './services/geminiService';
 import { AppView } from './types';
-import { Smile, Star, Zap, Mic } from 'lucide-react';
+import { Smile, Star, Zap, Mic, PenTool } from 'lucide-react';
 
 const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChangeView }) => (
   <div className="space-y-8 animate-fade-in pb-20">
@@ -53,7 +55,7 @@ const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChan
 
         <button onClick={() => onChangeView(AppView.WRITING)} className="bg-slate-800 p-6 rounded-3xl shadow-lg border-2 border-slate-700 hover:border-brand-purple hover:bg-slate-750 group transition-all text-left">
             <div className="w-12 h-12 bg-brand-purple/20 text-brand-purple rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Smile size={24} />
+                <PenTool size={24} />
             </div>
             <h3 className="text-lg font-bold text-white mb-1">Writer</h3>
             <h4 className="text-brand-purple font-bold text-xs mb-2">寫作練習</h4>
@@ -64,6 +66,15 @@ const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChan
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
+  const [hasKey, setHasKey] = useState(false);
+
+  useEffect(() => {
+    setHasKey(hasValidKey());
+  }, []);
+
+  if (!hasKey) {
+    return <ApiKeySetup />;
+  }
 
   const renderView = () => {
     switch (currentView) {
