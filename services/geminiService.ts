@@ -38,10 +38,11 @@ const vocabularySchema = {
   properties: {
     word: { type: Type.STRING },
     definition: { type: Type.STRING, description: "Simple definition in English suitable for a 12 year old" },
+    chineseDefinition: { type: Type.STRING, description: "Definition in Traditional Chinese (繁體中文)" },
     exampleSentence: { type: Type.STRING },
     pronunciation: { type: Type.STRING, description: "Simple phonetic guide" }
   },
-  required: ["word", "definition", "exampleSentence", "pronunciation"]
+  required: ["word", "definition", "chineseDefinition", "exampleSentence", "pronunciation"]
 };
 
 const storySchema = {
