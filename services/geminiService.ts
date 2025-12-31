@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
-import { StoryResponse, QuizResponse, VocabularyWord, QuizQuestion, ChatMessage } from "../types";
+import { StoryResponse, QuizResponse, VocabularyWord, QuizQuestion, ChatMessage, ListeningChallenge } from "../types";
 
 // Key for local storage
 export const STORAGE_KEY = 'JE_GEMINI_API_KEY';
@@ -231,3 +231,51 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
         throw error;
     }
 }
+
+export const generateListeningChallenge = async (topic: string): Promise<ListeningChallenge> => {
+    try {
+        const ai = getAIClient();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Create a listening comprehension script and quiz for Grade 6-7 students about: ${topic}.
+            
+            Requirements:
+            1. Script: A monologue or dialogue (approx 100-150 words). CEFR A2/B1 level. Natural spoken English style.
+            2. Questions: 3 multiple choice questions based on the script.
+            3. Explanation: Traditional Chinese explanations.`,
+            config: {
+                responseMimeType: "application/json",
+                // @ts-ignore
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        topic: { type: Type.STRING },
+                        difficulty: { type: Type.STRING },
+                        script: { type: Type.STRING },
+                        questions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    id: { type: Type.INTEGER },
+                                    question: { type: Type.STRING },
+                                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    correctAnswerIndex: { type: Type.INTEGER },
+                                    explanation: { type: Type.STRING }
+                                }
+                            }
+                        }
+                    }
+                },
+                safetySettings: safetySettings,
+            }
+        });
+        
+        const text = response.text;
+        if (!text) throw new Error("No response from AI");
+        return JSON.parse(text) as ListeningChallenge;
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
+};
