@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { StoryResponse, QuizResponse, VocabularyWord, QuizQuestion, ChatMessage } from "../types";
 
 // 取得 API Key 的函式
@@ -33,7 +33,7 @@ const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key' }); // 防止空值�
 
 // Schemas for structured output
 
-const vocabularySchema: Schema = {
+const vocabularySchema = {
   type: Type.OBJECT,
   properties: {
     word: { type: Type.STRING },
@@ -44,7 +44,7 @@ const vocabularySchema: Schema = {
   required: ["word", "definition", "exampleSentence", "pronunciation"]
 };
 
-const storySchema: Schema = {
+const storySchema = {
   type: Type.OBJECT,
   properties: {
     title: { type: Type.STRING },
@@ -58,7 +58,7 @@ const storySchema: Schema = {
   required: ["title", "content", "summary", "vocabulary"]
 };
 
-const questionSchema: Schema = {
+const questionSchema = {
   type: Type.OBJECT,
   properties: {
     id: { type: Type.INTEGER },
@@ -74,7 +74,7 @@ const questionSchema: Schema = {
   required: ["id", "question", "options", "correctAnswerIndex", "explanation"]
 };
 
-const quizSchema: Schema = {
+const quizSchema = {
   type: Type.OBJECT,
   properties: {
     topic: { type: Type.STRING },
