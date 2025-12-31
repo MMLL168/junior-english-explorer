@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
-import { BookOpen, PenTool, Award, Home, Mic, Settings, LogOut, Headphones } from 'lucide-react';
+import { BookOpen, PenTool, Award, Home, Mic, Settings, Headphones, Sprout } from 'lucide-react';
 import { removeApiKeyFromStorage } from '../services/geminiService';
 
 interface LayoutProps {
@@ -19,7 +19,7 @@ const NavButton: React.FC<{
 }> = ({ active, onClick, icon, label, subLabel, colorClass }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform min-w-[3.5rem] ${
+    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform min-w-[3rem] md:min-w-[4rem] ${
       active 
         ? `${colorClass} text-slate-900 scale-110 shadow-lg shadow-black/50 font-bold` 
         : 'bg-transparent text-slate-500 hover:bg-slate-800 hover:text-slate-200 hover:scale-105'
@@ -48,7 +48,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
                 <p className="text-xs text-slate-400 font-bold tracking-wide">英語探索者</p>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            {/* Quick access to garden status could go here, but kept simple for now */}
              <button 
                 onClick={() => {
                     if(confirm('Are you sure you want to remove your API Key? (您確定要移除金鑰嗎？)')) {
@@ -71,7 +72,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
 
       {/* Bottom Navigation (Mobile & Tablet friendly) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/95 backdrop-blur-md border-t border-slate-700 shadow-2xl p-2 z-50">
-        <div className="max-w-2xl mx-auto grid grid-cols-6 gap-1 md:gap-2">
+        <div className="max-w-2xl mx-auto flex justify-between gap-1 overflow-x-auto">
           <NavButton 
             active={currentView === AppView.HOME} 
             onClick={() => onChangeView(AppView.HOME)}
@@ -84,7 +85,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             active={currentView === AppView.STORY} 
             onClick={() => onChangeView(AppView.STORY)}
             icon={<BookOpen size={20} />}
-            label="Stories"
+            label="Story"
             subLabel="故事"
             colorClass="bg-brand-orange text-white"
           />
@@ -95,6 +96,15 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             label="Listen"
             subLabel="聽力"
             colorClass="bg-brand-teal text-slate-900"
+          />
+           {/* Center Garden Button */}
+           <NavButton 
+            active={currentView === AppView.GARDEN} 
+            onClick={() => onChangeView(AppView.GARDEN)}
+            icon={<Sprout size={24} />}
+            label="Garden"
+            subLabel="花園"
+            colorClass="bg-emerald-500 text-white shadow-emerald-500/50"
           />
           <NavButton 
             active={currentView === AppView.SPEAKING} 
