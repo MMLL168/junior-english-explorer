@@ -1,0 +1,7 @@
+{
+  "name": "Junior English Explorer",
+  "description": "A fun, AI-powered English learning platform designed specifically for upper elementary and junior high students (Grades 5-7). Features interactive stories, vocabulary building, and a friendly writing assistant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
