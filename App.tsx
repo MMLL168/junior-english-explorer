@@ -107,13 +107,16 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
   const [hasKey, setHasKey] = useState(false);
 
-  // Persistent state for Listening Lab
-  const [listeningState, setListeningState] = useState<ListeningState>({
-    topic: '',
-    challenge: null,
-    answers: {},
-    isSubmitted: false,
-    showScript: false
+  // Persistent state for Listening Lab (Now truly persistent via localStorage)
+  const [listeningState, setListeningState] = useState<ListeningState>(() => {
+    const saved = localStorage.getItem('JE_LISTENING_STATE');
+    return saved ? JSON.parse(saved) : {
+      topic: '',
+      challenge: null,
+      answers: {},
+      isSubmitted: false,
+      showScript: false
+    };
   });
 
   // --- Gamification State ---
@@ -136,13 +139,20 @@ const App: React.FC = () => {
   const [showWaterNotif, setShowWaterNotif] = useState(false);
   const [lastEarned, setLastEarned] = useState(0);
 
+  // Save Resources to LocalStorage
   useEffect(() => {
     localStorage.setItem('JE_RESOURCES', JSON.stringify(resources));
   }, [resources]);
 
+  // Save Plants to LocalStorage
   useEffect(() => {
     localStorage.setItem('JE_PLANTS', JSON.stringify(plants));
   }, [plants]);
+
+  // Save Listening State to LocalStorage (New!)
+  useEffect(() => {
+    localStorage.setItem('JE_LISTENING_STATE', JSON.stringify(listeningState));
+  }, [listeningState]);
 
   useEffect(() => {
     setHasKey(hasValidKey());
