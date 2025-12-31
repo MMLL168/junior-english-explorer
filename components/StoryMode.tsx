@@ -18,8 +18,8 @@ export const StoryMode: React.FC = () => {
     try {
       const result = await generateStory(topic);
       setStory(result);
-    } catch (e) {
-      alert("Oops! The AI teacher is taking a break. Try again. (AI 老師累了，請再試一次)");
+    } catch (e: any) {
+      alert(`⚠️ 發生錯誤 (Error):\n${e.message}\n\n請檢查 API Key 設定。`);
     } finally {
       setLoading(false);
     }
