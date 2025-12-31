@@ -279,3 +279,53 @@ export const generateListeningChallenge = async (topic: string): Promise<Listeni
         throw error;
     }
 };
+
+export const generateVocabularyList = async (level: string): Promise<VocabularyWord[]> => {
+    try {
+        const ai = getAIClient();
+        let prompt = "";
+        
+        if (level === '1000') {
+            prompt = "Pick 5 distinct, useful English words from the standard 'Basic 1000 English Words' list (CEFR A1/A2). Suitable for elementary students.";
+        } else if (level === '2000') {
+            prompt = "Pick 5 distinct, useful English words from the '2000 Common English Words' list (CEFR A2/B1). Suitable for junior high students.";
+        } else {
+            prompt = "Pick 5 distinct, challenging English words from the '3000 Common English Words' list (CEFR B1). Suitable for advanced junior high students.";
+        }
+
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `${prompt}
+            
+            Output Requirements:
+            Provide a JSON array containing 5 vocabulary objects.
+            Each object must have: word, definition (simple English), chineseDefinition, exampleSentence (simple), chineseExample, pronunciation (IPA).`,
+            config: {
+                responseMimeType: "application/json",
+                // @ts-ignore
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            word: { type: Type.STRING },
+                            definition: { type: Type.STRING },
+                            chineseDefinition: { type: Type.STRING },
+                            exampleSentence: { type: Type.STRING },
+                            chineseExample: { type: Type.STRING },
+                            pronunciation: { type: Type.STRING }
+                        }
+                    }
+                },
+                safetySettings: safetySettings,
+            }
+        });
+
+        const text = response.text;
+        if (!text) throw new Error("No response from AI");
+        return JSON.parse(text) as VocabularyWord[];
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
+}
