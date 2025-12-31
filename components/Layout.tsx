@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
-import { BookOpen, PenTool, Award, Home, Mic, Settings, Headphones, Sprout } from 'lucide-react';
+import { BookOpen, PenTool, Award, Home, Mic, Settings, Headphones, Sprout, GraduationCap } from 'lucide-react';
 import { removeApiKeyFromStorage } from '../services/geminiService';
 
 interface LayoutProps {
@@ -82,20 +82,20 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             colorClass="bg-brand-blue text-white"
           />
           <NavButton 
+            active={currentView === AppView.VOCAB} 
+            onClick={() => onChangeView(AppView.VOCAB)}
+            icon={<GraduationCap size={20} />}
+            label="Vocab"
+            subLabel="單字"
+            colorClass="bg-indigo-500 text-white"
+          />
+          <NavButton 
             active={currentView === AppView.STORY} 
             onClick={() => onChangeView(AppView.STORY)}
             icon={<BookOpen size={20} />}
             label="Story"
             subLabel="故事"
             colorClass="bg-brand-orange text-white"
-          />
-          <NavButton 
-            active={currentView === AppView.LISTENING} 
-            onClick={() => onChangeView(AppView.LISTENING)}
-            icon={<Headphones size={20} />}
-            label="Listen"
-            subLabel="聽力"
-            colorClass="bg-brand-teal text-slate-900"
           />
            {/* Center Garden Button */}
            <NavButton 
@@ -105,6 +105,14 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             label="Garden"
             subLabel="花園"
             colorClass="bg-emerald-500 text-white shadow-emerald-500/50"
+          />
+          <NavButton 
+            active={currentView === AppView.LISTENING} 
+            onClick={() => onChangeView(AppView.LISTENING)}
+            icon={<Headphones size={20} />}
+            label="Listen"
+            subLabel="聽力"
+            colorClass="bg-brand-teal text-slate-900"
           />
           <NavButton 
             active={currentView === AppView.SPEAKING} 
@@ -121,14 +129,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             label="Quiz"
             subLabel="測驗"
             colorClass="bg-brand-green text-white"
-          />
-          <NavButton 
-            active={currentView === AppView.WRITING} 
-            onClick={() => onChangeView(AppView.WRITING)}
-            icon={<PenTool size={20} />}
-            label="Write"
-            subLabel="寫作"
-            colorClass="bg-brand-purple text-white"
           />
         </div>
       </nav>
