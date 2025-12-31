@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { StoryResponse, QuizResponse, VocabularyWord, QuizQuestion, ChatMessage } from "../types";
 
 // 取得 API Key 的函式
@@ -17,39 +17,55 @@ const getApiKey = () => {
   // 如果您沒有設定環境變數，請直接將金鑰貼在下方。
   // 申請網址: https://aistudio.google.com/app/apikey
   // ⚠️ 注意：請將下方的 '' 填入您的金鑰，看起來會像 const HARDCODED_KEY = 'AIzaSy...';
-  const HARDCODED_KEY = 'AIzaSyD3wuxXWX31_m3YlVp9qviRS2oLlCGnOEs'; 
+  const HARDCODED_KEY = ''; 
   
   return HARDCODED_KEY;
 };
 
 const apiKey = getApiKey();
 
-// 檢查金鑰是否存在，若不存在給予清楚的錯誤提示
-if (!apiKey) {
-  console.error("❌ API Key 遺失！請打開 services/geminiService.ts 並填入你的 API Key。");
+// Debug: 在 Console 印出金鑰狀態 (不會印出完整金鑰，只印前4碼)
+if (apiKey) {
+    console.log(`✅ API Key loaded: ${apiKey.substring(0, 4)}... (Length: ${apiKey.length})`);
+} else {
+    console.error("❌ API Key is MISSING or EMPTY.");
 }
 
 const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key' });
 
+// 設定安全性閥值，避免 AI 因為故事內容(如龍、打鬥)而誤判封鎖
+// 使用 BLOCK_ONLY_HIGH 代表只有非常嚴重的內容才會被擋
+const safetySettings = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+];
+
+// 使用更穩定的 Flash Lite 2.0 模型
+const MODEL_NAME = "gemini-2.0-flash-lite-preview-02-05";
+
 // Helper to handle API errors specifically
 const handleApiError = (error: any) => {
-  console.error("Gemini API Error:", error);
+  console.error("Gemini API Error Detail:", error);
   const msg = error.message || '';
   
   if (msg.includes('API key') || msg.includes('403')) {
-    throw new Error("API Key 無效或未設定。請檢查 services/geminiService.ts 檔案中的 HARDCODED_KEY。");
+    throw new Error("API Key 無效或權限不足。請檢查 services/geminiService.ts。");
   } else if (msg.includes('429')) {
     throw new Error("API 使用量已達上限 (Quota Exceeded)，請稍後再試。");
   } else if (msg.includes('404')) {
-    throw new Error("找不到模型。您的 API Key 可能不支援 gemini-3-flash-preview。");
-  } else if (msg.includes('Candidate was stopped')) {
-    throw new Error("內容被安全性篩選阻擋，請嘗試不同的主題。");
+    throw new Error(`找不到模型 (${MODEL_NAME})。可能此模型在您的地區暫無法使用。`);
+  } else if (msg.includes('SAFETY') || msg.includes('blocked')) {
+    throw new Error("內容被 AI 安全系統阻擋 (Safety Block)。請嘗試較溫和的主題。");
+  } else if (msg.includes('fetch failed')) {
+    throw new Error("網路連線失敗。請檢查網路或 VPN 設定。");
   } else {
-    throw new Error(`連線錯誤: ${msg.substring(0, 50)}...`);
+    throw new Error(`連線錯誤: ${msg.substring(0, 100)}...`);
   }
 };
 
-// Schemas for structured output
+// Schemas for structured output (保持不變)
 
 const vocabularySchema = {
   type: Type.OBJECT,
@@ -109,12 +125,11 @@ const quizSchema = {
 // Service Methods
 
 export const generateStory = async (topic: string): Promise<StoryResponse> => {
-  const modelId = "gemini-3-flash-preview";
   if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
 
   try {
     const response = await ai.models.generateContent({
-      model: modelId,
+      model: MODEL_NAME,
       contents: `Write a fun, engaging short story for a 6th grade student (approx 11-12 years old) about: ${topic}. 
       
       Pedagogical Requirements:
@@ -126,27 +141,27 @@ export const generateStory = async (topic: string): Promise<StoryResponse> => {
       config: {
         responseMimeType: "application/json",
         responseSchema: storySchema,
-        systemInstruction: "You are an expert ESL teacher with 30 years of experience teaching 5th-7th graders. You create materials that are easy to read but educational."
+        systemInstruction: "You are an expert ESL teacher with 30 years of experience teaching 5th-7th graders. You create materials that are easy to read but educational.",
+        safetySettings: safetySettings, // 加入安全性設定
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    if (!text) throw new Error("No response from AI (Content might be blocked or empty)");
     
     return JSON.parse(text) as StoryResponse;
   } catch (error) {
     handleApiError(error);
-    throw error; // unreachable but required for type safety
+    throw error;
   }
 };
 
 export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
-  const modelId = "gemini-3-flash-preview";
   if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
 
   try {
     const response = await ai.models.generateContent({
-      model: modelId,
+      model: MODEL_NAME,
       contents: `Create a 5-question multiple choice vocabulary and grammar quiz for 6th graders based on the topic: ${topic}.
       
       Requirements:
@@ -156,7 +171,8 @@ export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
       config: {
         responseMimeType: "application/json",
         responseSchema: quizSchema,
-        systemInstruction: "You are a helpful quiz master for kids in Taiwan. Keep questions clear in English, but explanations in Traditional Chinese."
+        systemInstruction: "You are a helpful quiz master for kids in Taiwan. Keep questions clear in English, but explanations in Traditional Chinese.",
+        safetySettings: safetySettings,
       }
     });
 
@@ -171,12 +187,11 @@ export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
 };
 
 export const correctSentence = async (sentence: string): Promise<string> => {
-    const modelId = "gemini-3-flash-preview";
     if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
     
     try {
         const response = await ai.models.generateContent({
-            model: modelId,
+            model: MODEL_NAME,
             contents: `The student wrote: "${sentence}". 
             
             Task:
@@ -190,7 +205,8 @@ export const correctSentence = async (sentence: string): Promise<string> => {
             Use the "Sandwich Method": Praise -> Correction -> Encouragement.
             Use emojis to be friendly (🌟, 👍, 💡).`,
             config: {
-                systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You always use Traditional Chinese to explain grammar concepts clearly and encouragingly."
+                systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You always use Traditional Chinese to explain grammar concepts clearly and encouragingly.",
+                safetySettings: safetySettings,
             }
         });
         
@@ -202,7 +218,6 @@ export const correctSentence = async (sentence: string): Promise<string> => {
 };
 
 export const getChatResponse = async (history: ChatMessage[], newMessage: string): Promise<string> => {
-    const modelId = "gemini-3-flash-preview";
     if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
     
     try {
@@ -211,7 +226,7 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
         promptContext += `\nStudent: ${newMessage}`;
 
         const response = await ai.models.generateContent({
-            model: modelId,
+            model: MODEL_NAME,
             contents: `Previous conversation:\n${promptContext}\n\nRespond as the Teacher.`,
             config: {
                 systemInstruction: `You are "Mr. Gemini", a fun and patient English teacher with 30 years of experience.
@@ -224,11 +239,8 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
                 4. Correction Policy: 
                 - If the student makes a MAJOR grammar mistake that confuses meaning, gently correct it first.
                 - If it's a minor mistake, just "Recast" (repeat their idea back to them correctly) and continue the conversation.
-                
-                Example of Recasting:
-                Student: "I go park yesterday."
-                Teacher: "Oh, you *went* to the park yesterday? That sounds fun! What did you do there?"
-                `
+                `,
+                safetySettings: safetySettings,
             }
         });
 
