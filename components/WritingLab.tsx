@@ -44,8 +44,8 @@ export const WritingLab: React.FC = () => {
     try {
         const response = await correctSentence(userMsg.text);
         setMessages(prev => [...prev, { role: 'model', text: response }]);
-    } catch (e) {
-        setMessages(prev => [...prev, { role: 'model', text: "Sorry, I lost my internet connection! (抱歉，網路連線中斷了)" }]);
+    } catch (e: any) {
+        setMessages(prev => [...prev, { role: 'model', text: `Sorry, something went wrong! (${e.message}) \n請檢查 API Key 設定。` }]);
     } finally {
         setIsTyping(false);
     }
