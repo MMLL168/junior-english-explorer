@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
-import { saveApiKeyToStorage } from '../services/geminiService';
-import { Key, ShieldCheck, ExternalLink, AlertTriangle } from 'lucide-react';
+import { saveApiKeyToStorage, verifyApiKey } from '../services/geminiService';
+import { Key, ShieldCheck, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export const ApiKeySetup: React.FC = () => {
   const [inputKey, setInputKey] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSave = () => {
-    if (inputKey.trim().length > 10) {
-      saveApiKeyToStorage(inputKey.trim());
+  const handleSave = async () => {
+    const trimmedKey = inputKey.trim();
+    
+    if (trimmedKey.length < 10) {
+      setErrorMsg("Please enter a valid API Key");
+      return;
+    }
+
+    setVerifying(true);
+    setErrorMsg(null);
+
+    // 實際呼叫 API 驗證 Key 是否有效
+    const isValid = await verifyApiKey(trimmedKey);
+
+    if (isValid) {
+      saveApiKeyToStorage(trimmedKey);
     } else {
-      alert("Please enter a valid API Key");
+      setErrorMsg("驗證失敗 (Verification Failed)。請確認 Key 是否正確，或是否已啟用 Billing。");
+      setVerifying(false);
     }
   };
 
@@ -23,34 +39,53 @@ export const ApiKeySetup: React.FC = () => {
         <h1 className="text-2xl font-bold text-white text-center mb-2 font-display">Teacher Setup</h1>
         <p className="text-slate-400 text-center mb-6 text-sm">
           Welcome to English Explorer! To start the magic, please enter your Google Gemini API Key.
-          <br/><span className="text-xs text-slate-500">(此設定只需做一次，金鑰會安全儲存在您的瀏覽器中)</span>
         </p>
 
         <div className="space-y-4">
-          <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-xl flex gap-3 items-start">
-             <AlertTriangle className="text-yellow-500 shrink-0" size={18} />
-             <p className="text-xs text-yellow-200/80">
-                Google blocked your previous key because it was on GitHub. Please generate a <b>NEW</b> key and paste it here. Do not commit this key to code!
-             </p>
-          </div>
-
           <div>
             <label className="block text-slate-300 text-sm font-bold mb-2 ml-1">Gemini API Key</label>
             <input 
               type="password" 
               value={inputKey}
-              onChange={(e) => setInputKey(e.target.value)}
-              placeholder="Paste your new key here (AIzaSy...)"
-              className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl text-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition-all"
+              onChange={(e) => {
+                setInputKey(e.target.value);
+                setErrorMsg(null);
+              }}
+              disabled={verifying}
+              placeholder="Paste your key here (AIzaSy...)"
+              className={`w-full p-4 bg-slate-900 border rounded-xl text-white outline-none transition-all
+                ${errorMsg 
+                  ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                  : 'border-slate-600 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue'}
+              `}
             />
+            {errorMsg && (
+              <p className="text-red-400 text-xs mt-2 ml-1 flex items-center gap-1">
+                <XCircle size={12} /> {errorMsg}
+              </p>
+            )}
           </div>
 
           <button 
             onClick={handleSave}
-            className="w-full bg-brand-blue text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2"
+            disabled={verifying || !inputKey}
+            className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2
+              ${verifying 
+                ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
+                : 'bg-brand-blue text-white hover:shadow-brand-blue/20 hover:-translate-y-1 active:scale-95'}
+            `}
           >
-            <ShieldCheck size={20} />
-            Connect & Start
+            {verifying ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Verifying Key...
+              </>
+            ) : (
+              <>
+                <ShieldCheck size={20} />
+                Connect & Start
+              </>
+            )}
           </button>
 
           <div className="text-center mt-4">
