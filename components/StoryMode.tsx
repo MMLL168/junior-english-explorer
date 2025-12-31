@@ -149,18 +149,23 @@ export const StoryMode: React.FC = () => {
                     : 'bg-slate-800/60 border-transparent hover:bg-slate-700 hover:border-brand-yellow/50'
                 }`}
               >
-                <span className="font-bold text-white text-lg block">{vocab.word}</span>
+                <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-white text-lg">{vocab.word}</span>
+                    <span className="text-sm font-bold text-brand-yellow/90 bg-brand-yellow/10 px-2 py-0.5 rounded ml-2 whitespace-nowrap">{vocab.chineseDefinition}</span>
+                </div>
+                
                 {selectedWord?.word === vocab.word && (
-                    <div className="mt-2 text-sm text-slate-300 animate-fade-in">
-                        <div className="flex items-center justify-between text-brand-blue font-mono mb-1">
+                    <div className="mt-3 text-sm text-slate-300 animate-fade-in border-t border-slate-600 pt-2">
+                        <div className="flex items-center justify-between text-brand-blue font-mono mb-2">
                             <span>/{vocab.pronunciation}/</span>
-                            <div className="p-1 bg-slate-600 rounded-full">
-                                <Volume2 size={14} />
+                            <div className="p-1.5 bg-brand-blue/10 rounded-full">
+                                <Volume2 size={16} />
                             </div>
                         </div>
                         <p className="italic mb-2 text-slate-400">"{vocab.definition}"</p>
-                        <p className="bg-yellow-900/30 p-2 rounded text-slate-300 border border-yellow-500/30 text-xs leading-relaxed">
-                            <span className="font-bold text-brand-yellow">Ex:</span> {vocab.exampleSentence}
+                        <p className="bg-slate-900/50 p-2 rounded-lg text-slate-300 border border-slate-600 text-xs leading-relaxed">
+                            <span className="font-bold text-brand-yellow block mb-1">Example:</span> 
+                            {vocab.exampleSentence}
                         </p>
                     </div>
                 )}
