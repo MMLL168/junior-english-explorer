@@ -155,18 +155,30 @@ export const StoryMode: React.FC = () => {
                 </div>
                 
                 {selectedWord?.word === vocab.word && (
-                    <div className="mt-3 text-sm text-slate-300 animate-fade-in border-t border-slate-600 pt-2">
+                    <div className="mt-3 text-sm text-slate-300 animate-fade-in border-t border-slate-600 pt-2 text-left">
                         <div className="flex items-center justify-between text-brand-blue font-mono mb-2">
                             <span>/{vocab.pronunciation}/</span>
-                            <div className="p-1.5 bg-brand-blue/10 rounded-full">
+                            <div className="p-1.5 bg-brand-blue/10 rounded-full hover:bg-brand-blue/20 cursor-pointer">
                                 <Volume2 size={16} />
                             </div>
                         </div>
-                        <p className="italic mb-2 text-slate-400">"{vocab.definition}"</p>
-                        <p className="bg-slate-900/50 p-2 rounded-lg text-slate-300 border border-slate-600 text-xs leading-relaxed">
-                            <span className="font-bold text-brand-yellow block mb-1">Example:</span> 
-                            {vocab.exampleSentence}
-                        </p>
+                        
+                        {/* Primary Chinese Definition */}
+                        <p className="text-lg font-bold text-brand-yellow mb-1">{vocab.chineseDefinition}</p>
+                        
+                        {/* English Definition */}
+                        <p className="italic mb-3 text-slate-400">"{vocab.definition}"</p>
+                        
+                        {/* Examples */}
+                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-600">
+                            <p className="text-slate-200 mb-2 leading-snug">
+                                <span className="font-bold text-brand-yellow mr-1">Ex:</span> 
+                                {vocab.exampleSentence}
+                            </p>
+                            <p className="text-slate-500 text-xs pl-6 border-l-2 border-slate-700">
+                                {vocab.chineseExample}
+                            </p>
+                        </div>
                     </div>
                 )}
               </button>
