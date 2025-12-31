@@ -6,6 +6,7 @@ export enum AppView {
   SPEAKING = 'SPEAKING',
   LISTENING = 'LISTENING',
   GARDEN = 'GARDEN',
+  VOCAB = 'VOCAB',
 }
 
 export interface VocabularyWord {
