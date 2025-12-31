@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
 import { generateStory } from '../services/geminiService';
 import { StoryResponse, VocabularyWord } from '../types';
-import { Sparkles, BookOpen, Volume2, ArrowRight, Loader2, PlayCircle, StopCircle } from 'lucide-react';
+import { Sparkles, BookOpen, Volume2, PlayCircle, StopCircle, Loader2, CheckCircle2 } from 'lucide-react';
 
-export const StoryMode: React.FC = () => {
+interface StoryModeProps {
+    onEarnXP: () => void;
+}
+
+export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
   const [topic, setTopic] = useState('');
   const [story, setStory] = useState<StoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
   const [isPlayingStory, setIsPlayingStory] = useState(false);
+  const [hasClaimedReward, setHasClaimedReward] = useState(false);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
     setLoading(true);
     setStory(null);
     setSelectedWord(null);
+    setHasClaimedReward(false);
     try {
       const result = await generateStory(topic);
       setStory(result);
@@ -25,6 +31,13 @@ export const StoryMode: React.FC = () => {
     }
   };
 
+  const handleClaimReward = () => {
+      if (!hasClaimedReward) {
+          onEarnXP();
+          setHasClaimedReward(true);
+      }
+  };
+
   const speakText = (text: string, isFullStory: boolean = false) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -33,7 +46,10 @@ export const StoryMode: React.FC = () => {
     
     if (isFullStory) {
         setIsPlayingStory(true);
-        utterance.onend = () => setIsPlayingStory(false);
+        utterance.onend = () => {
+             setIsPlayingStory(false);
+             // Auto claim reward after listening? Maybe optional.
+        };
     }
     
     window.speechSynthesis.speak(utterance);
@@ -55,7 +71,8 @@ export const StoryMode: React.FC = () => {
           <h3 className="text-lg font-bold text-brand-orange mb-2">英語故事時間</h3>
           <p className="text-slate-400 mb-6 text-sm md:text-base">
             What do you want to read about? <br/>
-            <span className="text-xs text-slate-500">想讀什麼故事？例如：Dragons (龍), Space (太空), Cats (貓咪)</span>
+            <span className="text-xs text-slate-500">想讀什麼故事？例如：Dragons (龍), Space (太空)</span>
+            <br/><span className="text-xs text-blue-400 font-bold mt-2 block">Reward: 5 💧 / Story</span>
           </p>
           
           <input
@@ -117,7 +134,23 @@ export const StoryMode: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-700 flex justify-between items-center">
+            {/* Finish Button */}
+           <div className="mt-8 pt-6 border-t border-slate-700">
+               {!hasClaimedReward ? (
+                   <button 
+                    onClick={handleClaimReward}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg animate-pulse"
+                   >
+                       <Sparkles size={20} /> Finish & Collect 5 Water Drops!
+                   </button>
+               ) : (
+                   <div className="w-full bg-slate-700 text-slate-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                       <CheckCircle2 size={20} className="text-green-500" /> Story Completed!
+                   </div>
+               )}
+           </div>
+
+          <div className="mt-4 flex justify-between items-center">
              <button onClick={() => { setStory(null); setTopic(''); stopSpeaking(); }} className="text-slate-400 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
                 Back to Library (返回)
              </button>
