@@ -157,13 +157,19 @@ export const correctSentence = async (sentence: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: modelId,
         contents: `The student wrote: "${sentence}". 
+        
+        Task:
         1. Identify any grammar or vocabulary mistakes.
-        2. Explain the mistake gently in Traditional Chinese (繁體中文).
-        3. Provide the corrected sentence in English.
-        4. Suggest a "Better Native Way" to say it if applicable.
-        5. Keep it short and encouraging.`,
+        2. If the sentence is perfect, say "Perfect! 寫得太棒了！" and give a thumbs up emoji.
+        3. If there are mistakes, explain them gently in Traditional Chinese (繁體中文).
+        4. Provide the corrected sentence in English.
+        5. Suggest a "Better Native Way" (更道地的說法) to say it.
+        
+        Tone:
+        Use the "Sandwich Method": Praise -> Correction -> Encouragement.
+        Use emojis to be friendly (🌟, 👍, 💡).`,
         config: {
-            systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You use Traditional Chinese to explain grammar concepts clearly."
+            systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You always use Traditional Chinese to explain grammar concepts clearly and encouragingly."
         }
     });
     
@@ -189,13 +195,14 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
             1. Response Length: Short! (1-3 sentences max). Don't lecture.
             2. Level: CEFR A2 (Simple words, clear grammar).
             3. Engagement: ALWAYS end with a simple question to keep the student talking.
-            4. Correction: Do not strictly correct grammar unless it blocks understanding. Instead, use "Recasting" (repeat their idea back to them correctly).
-               Example: 
-               Student: "I go park yesterday."
-               Teacher: "Oh, you went to the park yesterday? That sounds fun! What did you do there?"
+            4. Correction Policy: 
+               - If the student makes a MAJOR grammar mistake that confuses meaning, gently correct it first.
+               - If it's a minor mistake, just "Recast" (repeat their idea back to them correctly) and continue the conversation.
             
-            Role Play Mode:
-            If the conversation seems to be a role-play (e.g., ordering food, asking directions), stay in character but keep the language simple.`
+            Example of Recasting:
+               Student: "I go park yesterday."
+               Teacher: "Oh, you *went* to the park yesterday? That sounds fun! What did you do there?"
+            `
         }
     });
 
