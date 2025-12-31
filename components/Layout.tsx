@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppView } from '../types';
-import { BookOpen, PenTool, Award, Home, Mic } from 'lucide-react';
+import { BookOpen, PenTool, Award, Home, Mic, Settings, LogOut } from 'lucide-react';
+import { removeApiKeyFromStorage } from '../services/geminiService';
 
 interface LayoutProps {
   currentView: AppView;
@@ -36,7 +37,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
       {/* Top Header */}
       <header className="bg-[#1e293b] shadow-md border-b border-slate-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onChangeView(AppView.HOME)}>
             <div className="w-10 h-10 bg-brand-yellow rounded-full flex items-center justify-center text-white font-bold shadow-md text-lg">
               JE
             </div>
@@ -47,8 +48,18 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
                 <p className="text-xs text-slate-400 font-bold tracking-wide">英語探索者</p>
             </div>
           </div>
-          <div className="hidden md:flex space-x-4">
-             {/* Desktop Nav could go here */}
+          <div className="flex items-center">
+             <button 
+                onClick={() => {
+                    if(confirm('Are you sure you want to remove your API Key? (您確定要移除金鑰嗎？)')) {
+                        removeApiKeyFromStorage();
+                    }
+                }}
+                className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-colors"
+                title="Reset API Key"
+             >
+                <Settings size={20} />
+             </button>
           </div>
         </div>
       </header>
