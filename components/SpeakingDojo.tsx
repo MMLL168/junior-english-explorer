@@ -85,9 +85,10 @@ export const SpeakingDojo: React.FC = () => {
       const aiMessage: ChatMessage = { role: 'model', text: response };
       setMessages([...newMessages, aiMessage]);
       speakText(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Oops, connection error!");
+      alert(`連線錯誤: ${error.message}\n請檢查 API Key 設定。`);
+      setMessages(prev => [...prev, { role: 'model', text: "Sorry, I can't connect right now. (連線失敗)" }]);
     } finally {
       setIsProcessing(false);
       setTranscript(''); 
@@ -102,6 +103,9 @@ export const SpeakingDojo: React.FC = () => {
     getChatResponse([], startMsg).then(response => {
         setMessages([{ role: 'model', text: response }]);
         speakText(response);
+        setIsProcessing(false);
+    }).catch(error => {
+        alert(`無法開始對話: ${error.message}\n請檢查 API Key 設定。`);
         setIsProcessing(false);
     });
   };
