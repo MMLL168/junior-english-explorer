@@ -4,7 +4,11 @@ import { Send, User, Bot, Sparkles, PenTool, Lightbulb } from 'lucide-react';
 import { ChatMessage } from '../types';
 import canvasConfetti from 'canvas-confetti';
 
-export const WritingLab: React.FC = () => {
+interface WritingLabProps {
+    onEarnXP: () => void;
+}
+
+export const WritingLab: React.FC<WritingLabProps> = ({ onEarnXP }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', text: "Hi! I'm your Writing Assistant. \n你好！我是你的寫作小幫手。\n\nTry writing a sentence, and I'll help you check it! \n試著寫一個英文句子，我會幫你檢查喔！\n\nExample: 'I go to school yesterday.'" }
   ]);
@@ -33,7 +37,8 @@ export const WritingLab: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Trigger confetti for effort
+    // Trigger confetti for effort & Earn XP
+    onEarnXP();
     canvasConfetti({
         particleCount: 30,
         spread: 50,
