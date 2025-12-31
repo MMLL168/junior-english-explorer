@@ -6,10 +6,11 @@ import { WritingLab } from './components/WritingLab';
 import { SpeakingDojo } from './components/SpeakingDojo';
 import { ListeningLab, ListeningState } from './components/ListeningLab';
 import { Garden } from './components/Garden';
+import { VocabGym } from './components/VocabGym';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import { hasValidKey } from './services/geminiService';
 import { AppView, UserResources, Plant } from './types';
-import { Smile, Star, Zap, Mic, PenTool, Headphones, Sprout, Droplets } from 'lucide-react';
+import { Smile, Star, Zap, Mic, PenTool, Headphones, Sprout, Droplets, GraduationCap } from 'lucide-react';
 
 // Custom notification for earning water
 const WaterNotification: React.FC<{ amount: number; show: boolean }> = ({ amount, show }) => {
@@ -60,6 +61,15 @@ const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChan
     </div>
 
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-4">
+        {/* NEW: Vocab Button */}
+        <button onClick={() => onChangeView(AppView.VOCAB)} className="bg-slate-800 p-5 rounded-3xl shadow-lg border-2 border-slate-700 hover:border-indigo-500 hover:bg-slate-750 group transition-all text-left">
+            <div className="w-10 h-10 bg-indigo-500/20 text-indigo-500 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <GraduationCap size={20} />
+            </div>
+            <h3 className="text-base font-bold text-white mb-0.5">Vocab Gym</h3>
+            <h4 className="text-indigo-500 font-bold text-[10px] opacity-80">單字健身房</h4>
+        </button>
+
         <button onClick={() => onChangeView(AppView.STORY)} className="bg-slate-800 p-5 rounded-3xl shadow-lg border-2 border-slate-700 hover:border-brand-orange hover:bg-slate-750 group transition-all text-left">
             <div className="w-10 h-10 bg-brand-orange/20 text-brand-orange rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Star size={20} fill="currentColor" />
@@ -149,7 +159,7 @@ const App: React.FC = () => {
     localStorage.setItem('JE_PLANTS', JSON.stringify(plants));
   }, [plants]);
 
-  // Save Listening State to LocalStorage (New!)
+  // Save Listening State to LocalStorage
   useEffect(() => {
     localStorage.setItem('JE_LISTENING_STATE', JSON.stringify(listeningState));
   }, [listeningState]);
@@ -185,6 +195,8 @@ const App: React.FC = () => {
         return <ListeningLab savedState={listeningState} onSaveState={setListeningState} onEarnXP={(amount) => handleEarnWater(amount)} />;
       case AppView.GARDEN:
         return <Garden resources={resources} plants={plants} onUpdatePlants={setPlants} onUpdateResources={setResources} />;
+      case AppView.VOCAB:
+        return <VocabGym onEarnXP={(amount) => handleEarnWater(amount)} />;
       default:
         return <Dashboard onChangeView={setCurrentView} />;
     }
