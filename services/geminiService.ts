@@ -16,7 +16,7 @@ const getApiKey = () => {
   // 3. 【直接貼上金鑰】
   // 請將你在 Google AI Studio 申請的 API Key 貼在下方單引號中
   // ⚠️ 注意：請將下方的 '' 填入您的金鑰，例如 'AIzaSy...'
-  const HARDCODED_KEY = ''; 
+  const HARDCODED_KEY = 'AIzaSyD3wuxXWX31_m3YlVp9qviRS2oLlCGnOEs'; 
   
   return HARDCODED_KEY;
 };
