@@ -3,7 +3,11 @@ import { getChatResponse } from '../services/geminiService';
 import { ChatMessage } from '../types';
 import { Mic, MicOff, Sparkles, Coffee, School, Plane } from 'lucide-react';
 
-export const SpeakingDojo: React.FC = () => {
+interface SpeakingDojoProps {
+    onEarnXP: () => void;
+}
+
+export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -80,6 +84,9 @@ export const SpeakingDojo: React.FC = () => {
     const newMessages: ChatMessage[] = [...messages, { role: 'user', text }];
     setMessages(newMessages);
 
+    // Earn XP for speaking
+    onEarnXP();
+
     try {
       const response = await getChatResponse(newMessages, text);
       const aiMessage: ChatMessage = { role: 'model', text: response };
@@ -125,6 +132,7 @@ export const SpeakingDojo: React.FC = () => {
             <div>
                 <h2 className="text-3xl font-display font-bold text-white mb-2">English Dojo</h2>
                 <p className="text-slate-400">Choose a scenario to start practicing!<br/>選擇一個情境開始練習！</p>
+                <p className="text-xs text-blue-400 font-bold mt-2">Reward: 2 💧 / Turn</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-lg">
