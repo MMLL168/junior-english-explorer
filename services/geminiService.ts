@@ -38,11 +38,12 @@ const vocabularySchema = {
   properties: {
     word: { type: Type.STRING },
     definition: { type: Type.STRING, description: "Simple definition in English suitable for a 12 year old" },
-    chineseDefinition: { type: Type.STRING, description: "Definition in Traditional Chinese (繁體中文)" },
+    chineseDefinition: { type: Type.STRING, description: "Definition in Traditional Chinese (繁體中文). E.g. '神話的' for 'mythical'" },
     exampleSentence: { type: Type.STRING },
+    chineseExample: { type: Type.STRING, description: "Translation of the example sentence in Traditional Chinese (繁體中文)" },
     pronunciation: { type: Type.STRING, description: "Simple phonetic guide" }
   },
-  required: ["word", "definition", "chineseDefinition", "exampleSentence", "pronunciation"]
+  required: ["word", "definition", "chineseDefinition", "exampleSentence", "chineseExample", "pronunciation"]
 };
 
 const storySchema = {
