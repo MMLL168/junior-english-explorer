@@ -17,7 +17,7 @@ const getApiKey = () => {
   // 如果您沒有設定環境變數，請直接將金鑰貼在下方。
   // 申請網址: https://aistudio.google.com/app/apikey
   // ⚠️ 注意：請將下方的 '' 填入您的金鑰，看起來會像 const HARDCODED_KEY = 'AIzaSy...';
-  const HARDCODED_KEY = ''; 
+  const HARDCODED_KEY = 'AIzaSyD3wuxXWX31_m3YlVp9qviRS2oLlCGnOEs'; 
   
   return HARDCODED_KEY;
 };
