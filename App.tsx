@@ -5,10 +5,23 @@ import { QuizArena } from './components/QuizArena';
 import { WritingLab } from './components/WritingLab';
 import { SpeakingDojo } from './components/SpeakingDojo';
 import { ListeningLab, ListeningState } from './components/ListeningLab';
+import { Garden } from './components/Garden';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import { hasValidKey } from './services/geminiService';
-import { AppView } from './types';
-import { Smile, Star, Zap, Mic, PenTool, Headphones } from 'lucide-react';
+import { AppView, UserResources, Plant } from './types';
+import { Smile, Star, Zap, Mic, PenTool, Headphones, Sprout, Droplets } from 'lucide-react';
+
+// Custom notification for earning water
+const WaterNotification: React.FC<{ amount: number; show: boolean }> = ({ amount, show }) => {
+    if (!show) return null;
+    return (
+        <div className="fixed top-20 right-4 z-50 animate-bounce">
+            <div className="bg-blue-500 text-white px-4 py-2 rounded-full font-bold shadow-lg shadow-blue-500/50 flex items-center gap-2 border-2 border-white">
+                <Droplets size={20} fill="currentColor" /> +{amount} Water!
+            </div>
+        </div>
+    );
+};
 
 const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChangeView }) => (
   <div className="space-y-8 animate-fade-in pb-20">
@@ -26,6 +39,23 @@ const Dashboard: React.FC<{ onChangeView: (view: AppView) => void }> = ({ onChan
         </div>
         <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
             <Smile size={200} />
+        </div>
+    </div>
+
+    {/* Gamification Teaser */}
+    <div 
+        onClick={() => onChangeView(AppView.GARDEN)}
+        className="bg-gradient-to-r from-emerald-800 to-emerald-600 rounded-3xl p-6 text-white shadow-lg cursor-pointer hover:scale-[1.02] transition-transform border border-emerald-500/30 flex items-center justify-between"
+    >
+        <div>
+            <h3 className="text-xl font-bold flex items-center gap-2">
+                <Sprout size={24} className="text-brand-green" />
+                Magic Garden
+            </h3>
+            <p className="text-emerald-100 text-sm">Check your plants & collect rewards!<br/>檢查你的植物並領取獎勵！</p>
+        </div>
+        <div className="bg-white/20 p-3 rounded-full">
+            <Star size={24} fill="currentColor" className="text-brand-yellow" />
         </div>
     </div>
 
@@ -86,9 +116,44 @@ const App: React.FC = () => {
     showScript: false
   });
 
+  // --- Gamification State ---
+  // In a real app, this would be saved to localStorage or a database
+  const [resources, setResources] = useState<UserResources>(() => {
+      const saved = localStorage.getItem('JE_RESOURCES');
+      return saved ? JSON.parse(saved) : { waterDrops: 10, stars: 0 }; // Start with 10 water drops for free
+  });
+
+  const [plants, setPlants] = useState<Plant[]>(() => {
+      const saved = localStorage.getItem('JE_PLANTS');
+      return saved ? JSON.parse(saved) : [
+          { id: 1, stage: 1, type: 'sunflower', waterLevel: 0, waterNeeded: 2 },
+          { id: 2, stage: 1, type: 'apple', waterLevel: 0, waterNeeded: 2 },
+          { id: 3, stage: 1, type: 'cactus', waterLevel: 0, waterNeeded: 2 },
+      ];
+  });
+
+  // Notification State
+  const [showWaterNotif, setShowWaterNotif] = useState(false);
+  const [lastEarned, setLastEarned] = useState(0);
+
+  useEffect(() => {
+    localStorage.setItem('JE_RESOURCES', JSON.stringify(resources));
+  }, [resources]);
+
+  useEffect(() => {
+    localStorage.setItem('JE_PLANTS', JSON.stringify(plants));
+  }, [plants]);
+
   useEffect(() => {
     setHasKey(hasValidKey());
   }, []);
+
+  const handleEarnWater = (amount: number) => {
+      setResources(prev => ({ ...prev, waterDrops: prev.waterDrops + amount }));
+      setLastEarned(amount);
+      setShowWaterNotif(true);
+      setTimeout(() => setShowWaterNotif(false), 2000);
+  };
 
   if (!hasKey) {
     return <ApiKeySetup />;
@@ -99,15 +164,17 @@ const App: React.FC = () => {
       case AppView.HOME:
         return <Dashboard onChangeView={setCurrentView} />;
       case AppView.STORY:
-        return <StoryMode />;
+        return <StoryMode onEarnXP={() => handleEarnWater(5)} />;
       case AppView.QUIZ:
-        return <QuizArena />;
+        return <QuizArena onEarnXP={(amount) => handleEarnWater(amount)} />;
       case AppView.WRITING:
-        return <WritingLab />;
+        return <WritingLab onEarnXP={() => handleEarnWater(1)} />;
       case AppView.SPEAKING:
-        return <SpeakingDojo />;
+        return <SpeakingDojo onEarnXP={() => handleEarnWater(2)} />;
       case AppView.LISTENING:
-        return <ListeningLab savedState={listeningState} onSaveState={setListeningState} />;
+        return <ListeningLab savedState={listeningState} onSaveState={setListeningState} onEarnXP={(amount) => handleEarnWater(amount)} />;
+      case AppView.GARDEN:
+        return <Garden resources={resources} plants={plants} onUpdatePlants={setPlants} onUpdateResources={setResources} />;
       default:
         return <Dashboard onChangeView={setCurrentView} />;
     }
@@ -115,6 +182,7 @@ const App: React.FC = () => {
 
   return (
     <Layout currentView={currentView} onChangeView={setCurrentView}>
+      <WaterNotification amount={lastEarned} show={showWaterNotif} />
       {renderView()}
     </Layout>
   );
