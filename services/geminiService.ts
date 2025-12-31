@@ -14,9 +14,9 @@ const getApiKey = () => {
   }
 
   // 3. 【直接貼上金鑰】
-  // 請將你在 Google Cloud 複製的 "AIza..." 開頭金鑰貼在下方單引號中
-  // 記得：一定要先在 Google Cloud Console 設定「網站限制」保護這把鑰匙！
-  const HARDCODED_KEY = 'AIzaSyD3wuxXWX31_m3YlVp9qviRS2oLlCGnOEs'; // <--- 請貼在這裡，例如 'AIzaSyQr...'
+  // 請將你在 Google AI Studio 申請的 API Key 貼在下方單引號中
+  // ⚠️ 注意：請將下方的 '' 填入您的金鑰，例如 'AIzaSy...'
+  const HARDCODED_KEY = ''; 
   
   return HARDCODED_KEY;
 };
@@ -25,11 +25,28 @@ const apiKey = getApiKey();
 
 // 檢查金鑰是否存在，若不存在給予清楚的錯誤提示
 if (!apiKey) {
-  console.error("❌ API Key 遺失！請打開 services/geminiService.ts 並填入你的 Google Cloud API Key。");
-  alert("⚠️ 尚未設定 API Key！\n請打開 services/geminiService.ts 檔案，將你的金鑰填入 HARDCODED_KEY 欄位中。");
+  console.error("❌ API Key 遺失！請打開 services/geminiService.ts 並填入你的 API Key。");
 }
 
-const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key' }); // 防止空值報錯，讓 UI 可以顯示錯誤訊息
+const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key' });
+
+// Helper to handle API errors specifically
+const handleApiError = (error: any) => {
+  console.error("Gemini API Error:", error);
+  const msg = error.message || '';
+  
+  if (msg.includes('API key') || msg.includes('403')) {
+    throw new Error("API Key 無效或未設定。請檢查 services/geminiService.ts 檔案。");
+  } else if (msg.includes('429')) {
+    throw new Error("API 使用量已達上限 (Quota Exceeded)，請稍後再試。");
+  } else if (msg.includes('404')) {
+    throw new Error("找不到模型。您的 API Key 可能不支援 gemini-3-flash-preview。");
+  } else if (msg.includes('Candidate was stopped')) {
+    throw new Error("內容被安全性篩選阻擋，請嘗試不同的主題。");
+  } else {
+    throw new Error(`連線錯誤: ${msg.substring(0, 50)}...`);
+  }
+};
 
 // Schemas for structured output
 
@@ -92,7 +109,7 @@ const quizSchema = {
 
 export const generateStory = async (topic: string): Promise<StoryResponse> => {
   const modelId = "gemini-3-flash-preview";
-  if (!apiKey) throw new Error("API Key missing");
+  if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
 
   try {
     const response = await ai.models.generateContent({
@@ -117,14 +134,14 @@ export const generateStory = async (topic: string): Promise<StoryResponse> => {
     
     return JSON.parse(text) as StoryResponse;
   } catch (error) {
-    console.error("Error generating story:", error);
-    throw error;
+    handleApiError(error);
+    throw error; // unreachable but required for type safety
   }
 };
 
 export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
   const modelId = "gemini-3-flash-preview";
-  if (!apiKey) throw new Error("API Key missing");
+  if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
 
   try {
     const response = await ai.models.generateContent({
@@ -147,66 +164,76 @@ export const generateQuiz = async (topic: string): Promise<QuizResponse> => {
 
     return JSON.parse(text) as QuizResponse;
   } catch (error) {
-    console.error("Error generating quiz:", error);
+    handleApiError(error);
     throw error;
   }
 };
 
 export const correctSentence = async (sentence: string): Promise<string> => {
     const modelId = "gemini-3-flash-preview";
-    if (!apiKey) throw new Error("API Key missing");
+    if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
     
-    const response = await ai.models.generateContent({
-        model: modelId,
-        contents: `The student wrote: "${sentence}". 
+    try {
+        const response = await ai.models.generateContent({
+            model: modelId,
+            contents: `The student wrote: "${sentence}". 
+            
+            Task:
+            1. Identify any grammar or vocabulary mistakes.
+            2. If the sentence is perfect, say "Perfect! 寫得太棒了！" and give a thumbs up emoji.
+            3. If there are mistakes, explain them gently in Traditional Chinese (繁體中文).
+            4. Provide the corrected sentence in English.
+            5. Suggest a "Better Native Way" (更道地的說法) to say it.
+            
+            Tone:
+            Use the "Sandwich Method": Praise -> Correction -> Encouragement.
+            Use emojis to be friendly (🌟, 👍, 💡).`,
+            config: {
+                systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You always use Traditional Chinese to explain grammar concepts clearly and encouragingly."
+            }
+        });
         
-        Task:
-        1. Identify any grammar or vocabulary mistakes.
-        2. If the sentence is perfect, say "Perfect! 寫得太棒了！" and give a thumbs up emoji.
-        3. If there are mistakes, explain them gently in Traditional Chinese (繁體中文).
-        4. Provide the corrected sentence in English.
-        5. Suggest a "Better Native Way" (更道地的說法) to say it.
-        
-        Tone:
-        Use the "Sandwich Method": Praise -> Correction -> Encouragement.
-        Use emojis to be friendly (🌟, 👍, 💡).`,
-        config: {
-            systemInstruction: "You are a kind, supportive English tutor for kids in Taiwan. You always use Traditional Chinese to explain grammar concepts clearly and encouragingly."
-        }
-    });
-    
-    return response.text || "Good job! 做得好！";
+        return response.text || "Good job! 做得好！";
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
 };
 
 export const getChatResponse = async (history: ChatMessage[], newMessage: string): Promise<string> => {
     const modelId = "gemini-3-flash-preview";
-    if (!apiKey) throw new Error("API Key missing");
+    if (!apiKey) throw new Error("請先設定 API Key (在 services/geminiService.ts)");
     
-    // Construct simplified history
-    let promptContext = history.map(h => `${h.role === 'user' ? 'Student' : 'Teacher'}: ${h.text}`).join('\n');
-    promptContext += `\nStudent: ${newMessage}`;
+    try {
+        // Construct simplified history
+        let promptContext = history.map(h => `${h.role === 'user' ? 'Student' : 'Teacher'}: ${h.text}`).join('\n');
+        promptContext += `\nStudent: ${newMessage}`;
 
-    const response = await ai.models.generateContent({
-        model: modelId,
-        contents: `Previous conversation:\n${promptContext}\n\nRespond as the Teacher.`,
-        config: {
-            systemInstruction: `You are "Mr. Gemini", a fun and patient English teacher with 30 years of experience.
-            Target Audience: Taiwanese students (Grades 5-7, approx 11-13 years old).
-            
-            Core Rules:
-            1. Response Length: Short! (1-3 sentences max). Don't lecture.
-            2. Level: CEFR A2 (Simple words, clear grammar).
-            3. Engagement: ALWAYS end with a simple question to keep the student talking.
-            4. Correction Policy: 
-               - If the student makes a MAJOR grammar mistake that confuses meaning, gently correct it first.
-               - If it's a minor mistake, just "Recast" (repeat their idea back to them correctly) and continue the conversation.
-            
-            Example of Recasting:
-               Student: "I go park yesterday."
-               Teacher: "Oh, you *went* to the park yesterday? That sounds fun! What did you do there?"
-            `
-        }
-    });
+        const response = await ai.models.generateContent({
+            model: modelId,
+            contents: `Previous conversation:\n${promptContext}\n\nRespond as the Teacher.`,
+            config: {
+                systemInstruction: `You are "Mr. Gemini", a fun and patient English teacher with 30 years of experience.
+                Target Audience: Taiwanese students (Grades 5-7, approx 11-13 years old).
+                
+                Core Rules:
+                1. Response Length: Short! (1-3 sentences max). Don't lecture.
+                2. Level: CEFR A2 (Simple words, clear grammar).
+                3. Engagement: ALWAYS end with a simple question to keep the student talking.
+                4. Correction Policy: 
+                - If the student makes a MAJOR grammar mistake that confuses meaning, gently correct it first.
+                - If it's a minor mistake, just "Recast" (repeat their idea back to them correctly) and continue the conversation.
+                
+                Example of Recasting:
+                Student: "I go park yesterday."
+                Teacher: "Oh, you *went* to the park yesterday? That sounds fun! What did you do there?"
+                `
+            }
+        });
 
-    return response.text || "I'm listening...";
+        return response.text || "I'm listening...";
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
 }
