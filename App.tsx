@@ -4,7 +4,7 @@ import { StoryMode } from './components/StoryMode';
 import { QuizArena } from './components/QuizArena';
 import { WritingLab } from './components/WritingLab';
 import { SpeakingDojo } from './components/SpeakingDojo';
-import { ListeningLab } from './components/ListeningLab';
+import { ListeningLab, ListeningState } from './components/ListeningLab';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import { hasValidKey } from './services/geminiService';
 import { AppView } from './types';
@@ -77,6 +77,15 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
   const [hasKey, setHasKey] = useState(false);
 
+  // Persistent state for Listening Lab
+  const [listeningState, setListeningState] = useState<ListeningState>({
+    topic: '',
+    challenge: null,
+    answers: {},
+    isSubmitted: false,
+    showScript: false
+  });
+
   useEffect(() => {
     setHasKey(hasValidKey());
   }, []);
@@ -98,7 +107,7 @@ const App: React.FC = () => {
       case AppView.SPEAKING:
         return <SpeakingDojo />;
       case AppView.LISTENING:
-        return <ListeningLab />;
+        return <ListeningLab savedState={listeningState} onSaveState={setListeningState} />;
       default:
         return <Dashboard onChangeView={setCurrentView} />;
     }
