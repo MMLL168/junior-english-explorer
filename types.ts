@@ -4,6 +4,7 @@ export enum AppView {
   QUIZ = 'QUIZ',
   WRITING = 'WRITING',
   SPEAKING = 'SPEAKING',
+  LISTENING = 'LISTENING',
 }
 
 export interface VocabularyWord {
@@ -39,4 +40,19 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   corrections?: string; // Optional field for corrected text if the user made mistakes
+}
+
+export interface ListeningQuestion {
+    id: number;
+    question: string;
+    options: string[];
+    correctAnswerIndex: number;
+    explanation: string;
+}
+
+export interface ListeningChallenge {
+    topic: string;
+    script: string; // The text to be spoken
+    questions: ListeningQuestion[];
+    difficulty: string;
 }
