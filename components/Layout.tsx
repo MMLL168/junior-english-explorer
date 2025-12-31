@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
-import { BookOpen, PenTool, Award, Home, Mic, Settings, LogOut } from 'lucide-react';
+import { BookOpen, PenTool, Award, Home, Mic, Settings, LogOut, Headphones } from 'lucide-react';
 import { removeApiKeyFromStorage } from '../services/geminiService';
 
 interface LayoutProps {
@@ -19,15 +19,15 @@ const NavButton: React.FC<{
 }> = ({ active, onClick, icon, label, subLabel, colorClass }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform ${
+    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform min-w-[3.5rem] ${
       active 
-        ? `${colorClass} text-white scale-110 shadow-lg shadow-black/50` 
+        ? `${colorClass} text-slate-900 scale-110 shadow-lg shadow-black/50 font-bold` 
         : 'bg-transparent text-slate-500 hover:bg-slate-800 hover:text-slate-200 hover:scale-105'
     }`}
   >
     <div className="mb-1">{icon}</div>
-    <span className="text-xs font-bold font-display leading-none">{label}</span>
-    <span className="text-[10px] opacity-80 mt-0.5">{subLabel}</span>
+    <span className="text-[10px] md:text-xs font-bold font-display leading-none hidden md:block">{label}</span>
+    <span className="text-[10px] md:text-[10px] opacity-80 mt-0.5">{subLabel}</span>
   </button>
 );
 
@@ -71,14 +71,14 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
 
       {/* Bottom Navigation (Mobile & Tablet friendly) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/95 backdrop-blur-md border-t border-slate-700 shadow-2xl p-2 z-50">
-        <div className="max-w-md mx-auto grid grid-cols-5 gap-2">
+        <div className="max-w-2xl mx-auto grid grid-cols-6 gap-1 md:gap-2">
           <NavButton 
             active={currentView === AppView.HOME} 
             onClick={() => onChangeView(AppView.HOME)}
             icon={<Home size={20} />}
             label="Home"
             subLabel="首頁"
-            colorClass="bg-brand-blue"
+            colorClass="bg-brand-blue text-white"
           />
           <NavButton 
             active={currentView === AppView.STORY} 
@@ -86,7 +86,15 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             icon={<BookOpen size={20} />}
             label="Stories"
             subLabel="故事"
-            colorClass="bg-brand-orange"
+            colorClass="bg-brand-orange text-white"
+          />
+          <NavButton 
+            active={currentView === AppView.LISTENING} 
+            onClick={() => onChangeView(AppView.LISTENING)}
+            icon={<Headphones size={20} />}
+            label="Listen"
+            subLabel="聽力"
+            colorClass="bg-brand-teal text-slate-900"
           />
           <NavButton 
             active={currentView === AppView.SPEAKING} 
@@ -94,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             icon={<Mic size={20} />}
             label="Speak"
             subLabel="口說"
-            colorClass="bg-pink-500"
+            colorClass="bg-pink-500 text-white"
           />
           <NavButton 
             active={currentView === AppView.QUIZ} 
@@ -102,7 +110,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             icon={<Award size={20} />}
             label="Quiz"
             subLabel="測驗"
-            colorClass="bg-brand-green"
+            colorClass="bg-brand-green text-white"
           />
           <NavButton 
             active={currentView === AppView.WRITING} 
@@ -110,7 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             icon={<PenTool size={20} />}
             label="Write"
             subLabel="寫作"
-            colorClass="bg-brand-purple"
+            colorClass="bg-brand-purple text-white"
           />
         </div>
       </nav>
