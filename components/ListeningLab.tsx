@@ -1,32 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateListeningChallenge } from '../services/geminiService';
 import { ListeningChallenge } from '../types';
-import { Headphones, PlayCircle, StopCircle, Eye, EyeOff, Loader2, Volume2, FastForward, CheckCircle2, XCircle } from 'lucide-react';
+import { Headphones, PlayCircle, StopCircle, Loader2, Volume2, FastForward, CheckCircle2, XCircle } from 'lucide-react';
 import canvasConfetti from 'canvas-confetti';
 
-export const ListeningLab: React.FC = () => {
-    const [topic, setTopic] = useState('');
-    const [challenge, setChallenge] = useState<ListeningChallenge | null>(null);
+// 定義需要保存的狀態介面
+export interface ListeningState {
+    topic: string;
+    challenge: ListeningChallenge | null;
+    answers: {[key: number]: number};
+    isSubmitted: boolean;
+    showScript: boolean;
+}
+
+interface ListeningLabProps {
+    savedState: ListeningState;
+    onSaveState: (state: ListeningState) => void;
+}
+
+export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveState }) => {
+    // 從 props 解構出狀態，不再使用 local state 儲存核心資料
+    const { topic, challenge, answers, isSubmitted, showScript } = savedState;
+    
+    // UI 相關的暫時狀態 (切換頁面後重置沒關係)
     const [loading, setLoading] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [showScript, setShowScript] = useState(false);
     const [isSlowMode, setIsSlowMode] = useState(false);
     
-    // Quiz state
-    const [answers, setAnswers] = useState<{[key: number]: number}>({});
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    // Helper helpers to update specific fields of the state
+    const updateState = (updates: Partial<ListeningState>) => {
+        onSaveState({ ...savedState, ...updates });
+    };
+
+    // 重要：當元件卸載 (切換到別的頁面) 時，強制停止語音
+    useEffect(() => {
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+    }, []);
 
     const handleGenerate = async () => {
         if (!topic.trim()) return;
         setLoading(true);
-        setChallenge(null);
-        setAnswers({});
-        setIsSubmitted(false);
-        setShowScript(false);
+        // Reset state
+        updateState({
+            challenge: null,
+            answers: {},
+            isSubmitted: false,
+            showScript: false
+        });
         
         try {
             const result = await generateListeningChallenge(topic);
-            setChallenge(result);
+            updateState({ challenge: result });
         } catch (e: any) {
             alert(`⚠️ Error:\n${e.message}`);
         } finally {
@@ -46,6 +72,7 @@ export const ListeningLab: React.FC = () => {
             
             utterance.onstart = () => setIsPlaying(true);
             utterance.onend = () => setIsPlaying(false);
+            utterance.onerror = () => setIsPlaying(false);
             
             window.speechSynthesis.speak(utterance);
         }
@@ -53,12 +80,16 @@ export const ListeningLab: React.FC = () => {
 
     const handleAnswer = (qId: number, optionIdx: number) => {
         if(isSubmitted) return;
-        setAnswers(prev => ({...prev, [qId]: optionIdx}));
+        updateState({
+            answers: { ...answers, [qId]: optionIdx }
+        });
     };
 
     const submitQuiz = () => {
-        setIsSubmitted(true);
-        setShowScript(true); // Reveal script after submitting
+        updateState({
+            isSubmitted: true,
+            showScript: true
+        });
         
         // Calculate score
         if(!challenge) return;
@@ -75,6 +106,21 @@ export const ListeningLab: React.FC = () => {
                 colors: ['#20E3B2', '#4FACFE']
             });
         }
+    };
+
+    const handleTopicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        updateState({ topic: e.target.value });
+    };
+
+    const resetLab = () => {
+        window.speechSynthesis.cancel();
+        updateState({
+            topic: '',
+            challenge: null,
+            answers: {},
+            isSubmitted: false,
+            showScript: false
+        });
     };
 
     if (!challenge && !loading) {
@@ -94,7 +140,7 @@ export const ListeningLab: React.FC = () => {
                     <input
                         type="text"
                         value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
+                        onChange={handleTopicChange}
                         placeholder="Topic (e.g., Shopping, Hobbies)..."
                         className="w-full p-4 bg-slate-900 border-2 border-slate-700 rounded-xl focus:border-brand-teal focus:ring-2 focus:ring-teal-900/50 outline-none transition-all text-lg mb-4 text-white placeholder-slate-500"
                     />
@@ -219,7 +265,7 @@ export const ListeningLab: React.FC = () => {
                     </button>
                 )}
 
-                {isSubmitted && (
+                {showScript && (
                     <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 animate-fade-in">
                          <div className="flex items-center justify-between mb-4">
                              <h3 className="font-bold text-white flex items-center gap-2">
@@ -231,7 +277,7 @@ export const ListeningLab: React.FC = () => {
                             {challenge?.script}
                          </div>
                          <button 
-                             onClick={() => { setTopic(''); setChallenge(null); window.speechSynthesis.cancel(); }}
+                             onClick={resetLab}
                              className="w-full mt-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
                          >
                             Try Another Topic (練習下一個)
