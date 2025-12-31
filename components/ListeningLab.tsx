@@ -16,9 +16,10 @@ export interface ListeningState {
 interface ListeningLabProps {
     savedState: ListeningState;
     onSaveState: (state: ListeningState) => void;
+    onEarnXP: (amount: number) => void;
 }
 
-export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveState }) => {
+export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveState, onEarnXP }) => {
     // 從 props 解構出狀態，不再使用 local state 儲存核心資料
     const { topic, challenge, answers, isSubmitted, showScript } = savedState;
     
@@ -98,6 +99,12 @@ export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveSt
             if(answers[q.id] === q.correctAnswerIndex) correctCount++;
         });
 
+        // Award points
+        if(correctCount > 0) {
+            const waterEarned = correctCount * 2; // 2 drops per question
+            onEarnXP(waterEarned);
+        }
+
         if(correctCount === challenge.questions.length) {
             canvasConfetti({
                 particleCount: 150,
@@ -135,6 +142,7 @@ export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveSt
                     <p className="text-slate-400 mb-6 text-sm">
                         Train your ears! Listen to a story and answer questions.<br/>
                         <span className="text-xs text-slate-500">訓練耳朵！輸入主題來練習聽力。</span>
+                         <br/><span className="text-xs text-blue-400 font-bold mt-2 block">Reward: 2 💧 / Correct Answer</span>
                     </p>
                     
                     <input
