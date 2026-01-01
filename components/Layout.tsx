@@ -19,15 +19,15 @@ const NavButton: React.FC<{
 }> = ({ active, onClick, icon, label, subLabel, colorClass }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform min-w-[3rem] md:min-w-[4rem] ${
+    className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 transform min-w-[3.5rem] md:min-w-[4.5rem] flex-shrink-0 ${
       active 
-        ? `${colorClass} text-slate-900 scale-110 shadow-lg shadow-black/50 font-bold` 
+        ? `${colorClass} text-slate-900 scale-110 shadow-lg shadow-black/50 font-bold z-10` 
         : 'bg-transparent text-slate-500 hover:bg-slate-800 hover:text-slate-200 hover:scale-105'
     }`}
   >
     <div className="mb-1">{icon}</div>
     <span className="text-[10px] md:text-xs font-bold font-display leading-none hidden md:block">{label}</span>
-    <span className="text-[10px] md:text-[10px] opacity-80 mt-0.5">{subLabel}</span>
+    <span className="text-[10px] md:text-[10px] opacity-80 mt-0.5 whitespace-nowrap">{subLabel}</span>
   </button>
 );
 
@@ -72,7 +72,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
 
       {/* Bottom Navigation (Mobile & Tablet friendly) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/95 backdrop-blur-md border-t border-slate-700 shadow-2xl p-2 z-50">
-        <div className="max-w-2xl mx-auto flex justify-between gap-1 overflow-x-auto">
+        <div className="max-w-2xl mx-auto flex justify-between gap-1 overflow-x-auto px-1 pb-1 scrollbar-hide">
           <NavButton 
             active={currentView === AppView.HOME} 
             onClick={() => onChangeView(AppView.HOME)}
@@ -90,6 +90,14 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             colorClass="bg-indigo-500 text-white"
           />
           <NavButton 
+            active={currentView === AppView.WRITING} 
+            onClick={() => onChangeView(AppView.WRITING)}
+            icon={<PenTool size={20} />}
+            label="Writer"
+            subLabel="寫作"
+            colorClass="bg-brand-purple text-white"
+          />
+           <NavButton 
             active={currentView === AppView.STORY} 
             onClick={() => onChangeView(AppView.STORY)}
             icon={<BookOpen size={20} />}
@@ -129,14 +137,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             label="Quiz"
             subLabel="測驗"
             colorClass="bg-brand-green text-white"
-          />
-          <NavButton 
-            active={currentView === AppView.WRITING} 
-            onClick={() => onChangeView(AppView.WRITING)}
-            icon={<PenTool size={20} />}
-            label="Writer"
-            subLabel="寫作"
-            colorClass="bg-brand-purple text-white"
           />
         </div>
       </nav>
