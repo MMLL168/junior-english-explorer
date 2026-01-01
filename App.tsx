@@ -190,7 +190,8 @@ const App: React.FC = () => {
       case AppView.WRITING:
         return <WritingLab onEarnXP={() => handleEarnWater(1)} />;
       case AppView.SPEAKING:
-        return <SpeakingDojo onEarnXP={() => handleEarnWater(2)} />;
+        // Changed reward to 1 drop (logic inside component handles the 10-sentence threshold)
+        return <SpeakingDojo onEarnXP={() => handleEarnWater(1)} />;
       case AppView.LISTENING:
         return <ListeningLab savedState={listeningState} onSaveState={setListeningState} onEarnXP={(amount) => handleEarnWater(amount)} />;
       case AppView.GARDEN:
