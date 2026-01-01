@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChatResponse } from '../services/geminiService';
 import { ChatMessage } from '../types';
-import { Mic, MicOff, Sparkles, Coffee, School, Plane } from 'lucide-react';
+import { Mic, MicOff, Sparkles, Coffee, School, Plane, Droplets } from 'lucide-react';
+import canvasConfetti from 'canvas-confetti';
 
 interface SpeakingDojoProps {
     onEarnXP: () => void;
@@ -14,6 +15,10 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [transcript, setTranscript] = useState('');
   const [recognition, setRecognition] = useState<any>(null);
+  
+  // New state for tracking progress towards reward
+  const [sentenceCount, setSentenceCount] = useState(0);
+  const SENTENCES_FOR_REWARD = 10;
   
   // Use ref to prevent garbage collection mid-speech
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -104,8 +109,21 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
     const newMessages: ChatMessage[] = [...messages, { role: 'user', text }];
     setMessages(newMessages);
 
-    // Earn XP for speaking
-    onEarnXP();
+    // --- Reward Logic Updated ---
+    const nextCount = sentenceCount + 1;
+    if (nextCount >= SENTENCES_FOR_REWARD) {
+        setSentenceCount(0);
+        onEarnXP(); // Earns 1 water drop (as configured in App.tsx)
+        canvasConfetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.8 },
+            colors: ['#4FACFE', '#00F260']
+        });
+    } else {
+        setSentenceCount(nextCount);
+    }
+    // -----------------------------
 
     try {
       const response = await getChatResponse(newMessages, text);
@@ -124,6 +142,7 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
 
   const startScenario = (scenario: string, initialMessage: string) => {
     setMessages([]);
+    setSentenceCount(0); // Reset progress on new scenario
     window.speechSynthesis.cancel();
     const startMsg = `Let's role play: ${scenario}. You start first!`;
     setIsProcessing(true);
@@ -141,6 +160,31 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-140px)] flex flex-col py-4">
       
+      {/* Header with Reward Progress */}
+      {messages.length > 0 && (
+          <div className="bg-slate-800 mx-4 p-3 rounded-2xl flex items-center justify-between border border-slate-700 shadow-md mb-2">
+               <div className="flex items-center gap-2">
+                   <div className="bg-pink-500/20 p-2 rounded-full text-pink-500">
+                       <Mic size={16} />
+                   </div>
+                   <div className="text-xs text-slate-400 font-bold">Speaking Practice</div>
+               </div>
+               
+               <div className="flex flex-col items-end w-40">
+                   <div className="text-[10px] font-bold text-slate-300 mb-1 flex items-center gap-1">
+                        <Droplets size={10} className="text-blue-400" />
+                        Next Reward: {sentenceCount}/{SENTENCES_FOR_REWARD}
+                   </div>
+                   <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-600">
+                       <div 
+                           className="bg-blue-500 h-full transition-all duration-500 ease-out"
+                           style={{ width: `${(sentenceCount / SENTENCES_FOR_REWARD) * 100}%` }}
+                       />
+                   </div>
+               </div>
+          </div>
+      )}
+
       {/* Visual Feedback Area */}
       <div className="flex-1 w-full flex flex-col space-y-4 p-4 overflow-hidden relative">
         
@@ -153,7 +197,7 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
             <div>
                 <h2 className="text-3xl font-display font-bold text-white mb-2">English Dojo</h2>
                 <p className="text-slate-400">Choose a scenario to start practicing!<br/>選擇一個情境開始練習！</p>
-                <p className="text-xs text-blue-400 font-bold mt-2">Reward: 2 💧 / Turn</p>
+                <p className="text-xs text-blue-400 font-bold mt-2">Reward: Speak 10 sentences for 1 💧</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-lg">
