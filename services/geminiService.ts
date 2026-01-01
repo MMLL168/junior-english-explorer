@@ -50,9 +50,8 @@ const safetySettings = [
   { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
 ];
 
-// CRITICAL FIX: 使用 gemini-1.5-flash，這是目前最穩定且免費額度較高的模型。
-// 2.0-flash 雖然新，但在預覽階段極易出現 429 Quota Exceeded。
-const MODEL_NAME = "gemini-1.5-flash";
+// Reverted to gemini-3-flash-preview as requested by user.
+const MODEL_NAME = "gemini-3-flash-preview";
 
 // 動態建立 AI 實例 (避免 Key 更新後還用舊的)
 const getAIClient = () => {
