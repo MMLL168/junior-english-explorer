@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { generateStory } from '../services/geminiService';
 import { StoryResponse, VocabularyWord } from '../types';
 import { Sparkles, BookOpen, Volume2, PlayCircle, StopCircle, Loader2, CheckCircle2 } from 'lucide-react';
@@ -14,6 +14,15 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
   const [isPlayingStory, setIsPlayingStory] = useState(false);
   const [hasClaimedReward, setHasClaimedReward] = useState(false);
+  
+  // Use ref to prevent garbage collection mid-speech
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
@@ -21,6 +30,7 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
     setStory(null);
     setSelectedWord(null);
     setHasClaimedReward(false);
+    window.speechSynthesis.cancel();
     try {
       const result = await generateStory(topic);
       setStory(result);
@@ -40,16 +50,26 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
 
   const speakText = (text: string, isFullStory: boolean = false) => {
     window.speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = isFullStory ? 0.85 : 0.9; // Slower for story reading
+    utterance.rate = isFullStory ? 0.85 : 0.9;
+    
+    // Store reference to prevent garbage collection
+    utteranceRef.current = utterance;
     
     if (isFullStory) {
         setIsPlayingStory(true);
         utterance.onend = () => {
              setIsPlayingStory(false);
-             // Auto claim reward after listening? Maybe optional.
+             utteranceRef.current = null;
         };
+        utterance.onerror = () => {
+             setIsPlayingStory(false);
+             utteranceRef.current = null;
+        };
+    } else {
+        utterance.onend = () => { utteranceRef.current = null; };
     }
     
     window.speechSynthesis.speak(utterance);
@@ -58,6 +78,7 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
   const stopSpeaking = () => {
     window.speechSynthesis.cancel();
     setIsPlayingStory(false);
+    utteranceRef.current = null;
   };
 
   if (!story && !loading) {
