@@ -130,6 +130,14 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, child
             subLabel="測驗"
             colorClass="bg-brand-green text-white"
           />
+          <NavButton 
+            active={currentView === AppView.WRITING} 
+            onClick={() => onChangeView(AppView.WRITING)}
+            icon={<PenTool size={20} />}
+            label="Writer"
+            subLabel="寫作"
+            colorClass="bg-brand-purple text-white"
+          />
         </div>
       </nav>
     </div>
