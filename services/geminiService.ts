@@ -50,8 +50,9 @@ const safetySettings = [
   { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
 ];
 
-// Switch to Gemini 2.0 Flash for better stability and rate limits compared to 3-preview
-const MODEL_NAME = "gemini-2.0-flash";
+// CRITICAL FIX: 使用 gemini-1.5-flash，這是目前最穩定且免費額度較高的模型。
+// 2.0-flash 雖然新，但在預覽階段極易出現 429 Quota Exceeded。
+const MODEL_NAME = "gemini-1.5-flash";
 
 // 動態建立 AI 實例 (避免 Key 更新後還用舊的)
 const getAIClient = () => {
@@ -63,13 +64,13 @@ const getAIClient = () => {
 };
 
 // Helper: Retry logic for 429 errors
-async function retryOperation<T>(operation: () => Promise<T>, retries = 3, delay = 1500): Promise<T> {
+async function retryOperation<T>(operation: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
     try {
         return await operation();
     } catch (error: any) {
         const msg = error.message || '';
         // Retry on Rate Limit (429) or Service Unavailable (503)
-        if (retries > 0 && (msg.includes('429') || msg.includes('503') || msg.includes('Quota'))) {
+        if (retries > 0 && (msg.includes('429') || msg.includes('503') || msg.includes('Quota') || msg.includes('Overloaded'))) {
             console.warn(`API Rate limit hit, retrying in ${delay}ms... (${retries} retries left)`);
             await new Promise(resolve => setTimeout(resolve, delay));
             return retryOperation(operation, retries - 1, delay * 2); // Exponential backoff
@@ -99,13 +100,11 @@ const handleApiError = (error: any) => {
   const msg = error.message || '';
   
   if (msg.includes('API key') || msg.includes('403')) {
-    // 如果 Key 無效，自動清除，讓使用者重新輸入
-    // removeApiKeyFromStorage(); // Optional: 自動登出
-    throw new Error("API Key 無效或已被 Google 封鎖。請確認您的金鑰是否正確，或是否不小心外洩了。");
+    throw new Error("API Key 無效或已被 Google 封鎖。請確認您的金鑰是否正確。");
   } else if (msg.includes('429')) {
-    throw new Error("目前使用人數過多 (Quota Exceeded)，請稍等幾秒再試一次 (系統已自動重試)。");
+    throw new Error("目前使用人數過多 (Quota Exceeded)，系統已自動重試但仍忙碌中。請休息 30 秒後再試。");
   } else if (msg.includes('404')) {
-    throw new Error(`找不到模型 (${MODEL_NAME})。您的 Key 可能不支援此模型。`);
+    throw new Error(`找不到模型 (${MODEL_NAME})。`);
   } else if (msg.includes('SAFETY') || msg.includes('blocked')) {
     throw new Error("內容被 AI 安全系統阻擋，請嘗試較溫和的主題。");
   } else if (msg.includes('fetch failed')) {
@@ -127,7 +126,7 @@ export const generateStory = async (topic: string): Promise<StoryResponse> => {
           
           Pedagogical Requirements:
           1. English Level: CEFR A2/B1 (Intermediate for kids).
-          2. Length: 150-250 words.
+          2. Length: 150-200 words.
           3. Grammar Focus: Include clear examples of Past Simple and Present Perfect tenses appropriately.
           4. Tone: Encouraging, exciting, and educational.
           5. Vocabulary: Highlight 5 key words that are useful for this age group.`,
