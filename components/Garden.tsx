@@ -16,7 +16,7 @@ export const Garden: React.FC<GardenProps> = ({ resources, plants, onUpdatePlant
 
     // Reward Shop Items
     const shopItems: RewardCard[] = [
-        { id: '1', title: '1 Hour Screen Time (看電視/玩手機 1 小時)', cost: 5, icon: '📺', color: 'bg-blue-500' },
+        { id: '1', title: '20 Mins Screen Time (看電視/玩手機 20 分鐘)', cost: 20, icon: '📺', color: 'bg-blue-500' },
         { id: '2', title: 'Favorite Snack (喜歡的零食)', cost: 8, icon: '🍪', color: 'bg-orange-500' },
         { id: '3', title: 'Fast Food Trip (吃速食/麥當勞)', cost: 20, icon: '🍔', color: 'bg-red-500' },
         { id: '4', title: 'Skip Chores (免做家事一次)', cost: 15, icon: '🧹', color: 'bg-purple-500' },
