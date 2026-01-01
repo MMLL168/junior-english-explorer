@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getChatResponse } from '../services/geminiService';
 import { ChatMessage } from '../types';
 import { Mic, MicOff, Sparkles, Coffee, School, Plane } from 'lucide-react';
@@ -14,6 +14,9 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [transcript, setTranscript] = useState('');
   const [recognition, setRecognition] = useState<any>(null);
+  
+  // Use ref to prevent garbage collection mid-speech
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -55,6 +58,11 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
     } else {
       console.warn("Browser does not support speech recognition.");
     }
+
+    return () => {
+      window.speechSynthesis.cancel();
+      utteranceRef.current = null;
+    };
   }, []);
 
   const toggleListening = () => {
@@ -68,12 +76,24 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
 
   const speakText = (text: string) => {
     window.speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     utterance.rate = 0.85; // Slower for clarity
     utterance.pitch = 1.1; // Slightly friendlier pitch
+    
+    utteranceRef.current = utterance;
+    
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      utteranceRef.current = null;
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      utteranceRef.current = null;
+    };
+    
     window.speechSynthesis.speak(utterance);
   };
 
@@ -104,6 +124,7 @@ export const SpeakingDojo: React.FC<SpeakingDojoProps> = ({ onEarnXP }) => {
 
   const startScenario = (scenario: string, initialMessage: string) => {
     setMessages([]);
+    window.speechSynthesis.cancel();
     const startMsg = `Let's role play: ${scenario}. You start first!`;
     setIsProcessing(true);
     // Silent trigger to AI to start the roleplay
