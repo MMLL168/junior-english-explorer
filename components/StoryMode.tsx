@@ -19,12 +19,15 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
   const [hasListenedToStory, setHasListenedToStory] = useState(false);
   const [learnedWords, setLearnedWords] = useState<Set<string>>(new Set());
   
-  // Use ref to prevent garbage collection mid-speech
+  // Ref to store the current utterance to prevent GC
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // Ref to control the playback loop
+  const isPlayingRef = useRef(false);
 
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
+      isPlayingRef.current = false;
     };
   }, []);
 
@@ -36,7 +39,7 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
     setHasClaimedReward(false);
     setHasListenedToStory(false);
     setLearnedWords(new Set());
-    window.speechSynthesis.cancel();
+    stopSpeaking(); // Ensure any previous audio stops
     
     try {
       const result = await generateStory(topic);
@@ -66,39 +69,75 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
       });
   };
 
+  // Helper to split text into sentences to avoid browser timeout on long strings
+  const splitTextIntoChunks = (text: string): string[] => {
+    // Regex to split by punctuation (. ! ?), keeping the punctuation, handling quotes
+    // This is a basic implementation suitable for kids' stories
+    const chunks = text.match(/[^\.!\?]+[\.!\?]+["']?|.+$/g);
+    return chunks || [text];
+  };
+
   const speakText = (text: string, isFullStory: boolean = false) => {
+    // Stop any current speech first
     window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = isFullStory ? 0.85 : 0.9;
-    
-    // Store reference to prevent garbage collection
-    utteranceRef.current = utterance;
+    isPlayingRef.current = true;
     
     if (isFullStory) {
         setIsPlayingStory(true);
-        utterance.onend = () => {
-             setIsPlayingStory(false);
-             setHasListenedToStory(true); // Mark story as listened when finished
-             utteranceRef.current = null;
+        const chunks = splitTextIntoChunks(text);
+        let currentChunkIndex = 0;
+
+        const speakNextChunk = () => {
+            // Check if user stopped playback or we reached the end
+            if (!isPlayingRef.current || currentChunkIndex >= chunks.length) {
+                setIsPlayingStory(false);
+                if (currentChunkIndex >= chunks.length) {
+                    setHasListenedToStory(true);
+                }
+                return;
+            }
+
+            const chunkText = chunks[currentChunkIndex];
+            const utterance = new SpeechSynthesisUtterance(chunkText);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; // Slightly slower for stories
+            
+            utteranceRef.current = utterance;
+
+            utterance.onend = () => {
+                currentChunkIndex++;
+                speakNextChunk();
+            };
+
+            utterance.onerror = (e) => {
+                console.error("Speech error", e);
+                setIsPlayingStory(false);
+                isPlayingRef.current = false;
+            };
+
+            window.speechSynthesis.speak(utterance);
         };
-        utterance.onerror = () => {
-             setIsPlayingStory(false);
-             utteranceRef.current = null;
-        };
+
+        speakNextChunk();
+
     } else {
+        // Single word or short phrase playback
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        
+        utteranceRef.current = utterance;
         utterance.onend = () => { utteranceRef.current = null; };
+        
+        window.speechSynthesis.speak(utterance);
     }
-    
-    window.speechSynthesis.speak(utterance);
   };
 
   const stopSpeaking = () => {
-    window.speechSynthesis.cancel();
+    isPlayingRef.current = false; // This stops the loop in speakNextChunk
     setIsPlayingStory(false);
+    window.speechSynthesis.cancel();
     utteranceRef.current = null;
-    // Note: If stopped manually, we do NOT set hasListenedToStory to true
   };
 
   if (!story && !loading) {
