@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateListeningChallenge } from '../services/geminiService';
 import { ListeningChallenge } from '../types';
 import { Headphones, PlayCircle, StopCircle, Loader2, Volume2, FastForward, CheckCircle2, XCircle } from 'lucide-react';
@@ -28,6 +28,9 @@ export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveSt
     const [isPlaying, setIsPlaying] = useState(false);
     const [isSlowMode, setIsSlowMode] = useState(false);
     
+    // Use ref to prevent garbage collection mid-speech
+    const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
     // Helper helpers to update specific fields of the state
     const updateState = (updates: Partial<ListeningState>) => {
         onSaveState({ ...savedState, ...updates });
@@ -37,12 +40,14 @@ export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveSt
     useEffect(() => {
         return () => {
             window.speechSynthesis.cancel();
+            utteranceRef.current = null;
         };
     }, []);
 
     const handleGenerate = async () => {
         if (!topic.trim()) return;
         setLoading(true);
+        window.speechSynthesis.cancel();
         // Reset state
         updateState({
             challenge: null,
@@ -65,15 +70,25 @@ export const ListeningLab: React.FC<ListeningLabProps> = ({ savedState, onSaveSt
         if (isPlaying) {
             window.speechSynthesis.cancel();
             setIsPlaying(false);
+            utteranceRef.current = null;
         } else if (challenge) {
             window.speechSynthesis.cancel();
+            
             const utterance = new SpeechSynthesisUtterance(challenge.script);
             utterance.lang = 'en-US';
             utterance.rate = isSlowMode ? 0.75 : 0.95; 
             
+            utteranceRef.current = utterance;
+            
             utterance.onstart = () => setIsPlaying(true);
-            utterance.onend = () => setIsPlaying(false);
-            utterance.onerror = () => setIsPlaying(false);
+            utterance.onend = () => {
+                setIsPlaying(false);
+                utteranceRef.current = null;
+            };
+            utterance.onerror = () => {
+                setIsPlaying(false);
+                utteranceRef.current = null;
+            };
             
             window.speechSynthesis.speak(utterance);
         }
