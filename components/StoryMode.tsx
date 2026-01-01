@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateStory } from '../services/geminiService';
 import { StoryResponse, VocabularyWord } from '../types';
-import { Sparkles, BookOpen, Volume2, PlayCircle, StopCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, BookOpen, Volume2, PlayCircle, StopCircle, Loader2, CheckCircle2, Lock } from 'lucide-react';
 
 interface StoryModeProps {
     onEarnXP: () => void;
@@ -14,6 +14,10 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
   const [isPlayingStory, setIsPlayingStory] = useState(false);
   const [hasClaimedReward, setHasClaimedReward] = useState(false);
+  
+  // New States for progress tracking
+  const [hasListenedToStory, setHasListenedToStory] = useState(false);
+  const [learnedWords, setLearnedWords] = useState<Set<string>>(new Set());
   
   // Use ref to prevent garbage collection mid-speech
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -30,7 +34,10 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
     setStory(null);
     setSelectedWord(null);
     setHasClaimedReward(false);
+    setHasListenedToStory(false);
+    setLearnedWords(new Set());
     window.speechSynthesis.cancel();
+    
     try {
       const result = await generateStory(topic);
       setStory(result);
@@ -48,6 +55,17 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
       }
   };
 
+  const handleVocabClick = (vocab: VocabularyWord) => {
+      setSelectedWord(vocab);
+      speakText(vocab.word);
+      // Mark word as learned
+      setLearnedWords(prev => {
+          const newSet = new Set(prev);
+          newSet.add(vocab.word);
+          return newSet;
+      });
+  };
+
   const speakText = (text: string, isFullStory: boolean = false) => {
     window.speechSynthesis.cancel();
     
@@ -62,6 +80,7 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
         setIsPlayingStory(true);
         utterance.onend = () => {
              setIsPlayingStory(false);
+             setHasListenedToStory(true); // Mark story as listened when finished
              utteranceRef.current = null;
         };
         utterance.onerror = () => {
@@ -79,6 +98,7 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
     window.speechSynthesis.cancel();
     setIsPlayingStory(false);
     utteranceRef.current = null;
+    // Note: If stopped manually, we do NOT set hasListenedToStory to true
   };
 
   if (!story && !loading) {
@@ -127,6 +147,12 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
     );
   }
 
+  // Calculate progress
+  const totalWords = story?.vocabulary.length || 0;
+  const learnedCount = learnedWords.size;
+  const allWordsLearned = learnedCount >= totalWords;
+  const canClaim = hasListenedToStory && allWordsLearned && !hasClaimedReward;
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 animate-fade-in pb-10">
       {/* Story Content */}
@@ -140,11 +166,13 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all ${
                         isPlayingStory 
                         ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
-                        : 'bg-brand-blue/20 text-brand-blue hover:bg-brand-blue/30'
+                        : hasListenedToStory 
+                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                            : 'bg-brand-blue/20 text-brand-blue hover:bg-brand-blue/30'
                     }`}
                 >
-                    {isPlayingStory ? <StopCircle size={20} /> : <PlayCircle size={20} />}
-                    <span>{isPlayingStory ? 'Stop Reading' : 'Read to Me'}</span>
+                    {isPlayingStory ? <StopCircle size={20} /> : (hasListenedToStory ? <CheckCircle2 size={20} /> : <PlayCircle size={20} />)}
+                    <span>{isPlayingStory ? 'Stop Reading' : (hasListenedToStory ? 'Listen Again' : 'Read to Me')}</span>
                 </button>
             </div>
           </div>
@@ -155,15 +183,35 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
             ))}
           </div>
 
-            {/* Finish Button */}
+            {/* Finish Button Section */}
            <div className="mt-8 pt-6 border-t border-slate-700">
                {!hasClaimedReward ? (
-                   <button 
-                    onClick={handleClaimReward}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg animate-pulse"
-                   >
-                       <Sparkles size={20} /> Finish & Collect 5 Water Drops!
-                   </button>
+                   <div className="space-y-2">
+                       {/* Progress Indicators */}
+                       <div className="flex flex-wrap gap-4 justify-center text-sm mb-2">
+                           <div className={`flex items-center gap-1 ${hasListenedToStory ? 'text-green-400 font-bold' : 'text-slate-500'}`}>
+                                {hasListenedToStory ? <CheckCircle2 size={16} /> : <div className="w-4 h-4 border-2 border-slate-600 rounded-full" />}
+                                Listen to full story (聽完故事)
+                           </div>
+                           <div className={`flex items-center gap-1 ${allWordsLearned ? 'text-green-400 font-bold' : 'text-slate-500'}`}>
+                                {allWordsLearned ? <CheckCircle2 size={16} /> : <div className="w-4 h-4 border-2 border-slate-600 rounded-full" />}
+                                Learn all words (學習所有單字 {learnedCount}/{totalWords})
+                           </div>
+                       </div>
+
+                       <button 
+                        onClick={handleClaimReward}
+                        disabled={!canClaim}
+                        className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all ${
+                            canClaim 
+                                ? 'bg-blue-600 hover:bg-blue-500 text-white animate-pulse' 
+                                : 'bg-slate-700 text-slate-400 cursor-not-allowed grayscale'
+                        }`}
+                       >
+                           {canClaim ? <Sparkles size={20} /> : <Lock size={20} />} 
+                           {canClaim ? 'Finish & Collect 5 Water Drops!' : 'Complete tasks to unlock reward'}
+                       </button>
+                   </div>
                ) : (
                    <div className="w-full bg-slate-700 text-slate-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
                        <CheckCircle2 size={20} className="text-green-500" /> Story Completed!
@@ -185,58 +233,68 @@ export const StoryMode: React.FC<StoryModeProps> = ({ onEarnXP }) => {
       {/* Vocabulary Sidebar */}
       <div className="w-full lg:w-80 space-y-4">
         <div className="bg-brand-yellow/10 p-6 rounded-3xl border border-brand-yellow/30 sticky top-24">
-          <h3 className="font-display font-bold text-xl text-white mb-4 flex items-center">
-            <Sparkles className="text-brand-yellow mr-2 fill-current" />
-            <div>
-                Magic Words
-                <div className="text-xs text-slate-400 font-normal">單字小卡 (點擊聽發音)</div>
+          <h3 className="font-display font-bold text-xl text-white mb-4 flex items-center justify-between">
+            <div className="flex items-center">
+                <Sparkles className="text-brand-yellow mr-2 fill-current" />
+                <div>
+                    Magic Words
+                    <div className="text-xs text-slate-400 font-normal">單字小卡 ({learnedCount}/{totalWords})</div>
+                </div>
             </div>
           </h3>
           <div className="space-y-3">
-            {story?.vocabulary.map((vocab, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setSelectedWord(vocab); speakText(vocab.word); }}
-                className={`w-full text-left p-4 rounded-xl transition-all duration-200 border-2 ${
-                  selectedWord?.word === vocab.word
-                    ? 'bg-slate-700 border-brand-yellow shadow-md transform scale-105'
-                    : 'bg-slate-800/60 border-transparent hover:bg-slate-700 hover:border-brand-yellow/50'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-white text-lg">{vocab.word}</span>
-                    <span className="text-sm font-bold text-brand-yellow/90 bg-brand-yellow/10 px-2 py-0.5 rounded ml-2 whitespace-nowrap">{vocab.chineseDefinition}</span>
-                </div>
-                
-                {selectedWord?.word === vocab.word && (
-                    <div className="mt-3 text-sm text-slate-300 animate-fade-in border-t border-slate-600 pt-2 text-left">
-                        <div className="flex items-center justify-between text-brand-blue font-mono mb-2">
-                            <span>/{vocab.pronunciation}/</span>
-                            <div className="p-1.5 bg-brand-blue/10 rounded-full hover:bg-brand-blue/20 cursor-pointer">
-                                <Volume2 size={16} />
-                            </div>
-                        </div>
-                        
-                        {/* Primary Chinese Definition */}
-                        <p className="text-lg font-bold text-brand-yellow mb-1">{vocab.chineseDefinition}</p>
-                        
-                        {/* English Definition */}
-                        <p className="italic mb-3 text-slate-400">"{vocab.definition}"</p>
-                        
-                        {/* Examples */}
-                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-600">
-                            <p className="text-slate-200 mb-2 leading-snug">
-                                <span className="font-bold text-brand-yellow mr-1">Ex:</span> 
-                                {vocab.exampleSentence}
-                            </p>
-                            <p className="text-slate-500 text-xs pl-6 border-l-2 border-slate-700">
-                                {vocab.chineseExample}
-                            </p>
+            {story?.vocabulary.map((vocab, idx) => {
+                const isLearned = learnedWords.has(vocab.word);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleVocabClick(vocab)}
+                    className={`w-full text-left p-4 rounded-xl transition-all duration-200 border-2 relative ${
+                      selectedWord?.word === vocab.word
+                        ? 'bg-slate-700 border-brand-yellow shadow-md transform scale-105'
+                        : isLearned 
+                            ? 'bg-slate-800/80 border-green-500/30' 
+                            : 'bg-slate-800/60 border-transparent hover:bg-slate-700 hover:border-brand-yellow/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                        <span className="font-bold text-white text-lg">{vocab.word}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-brand-yellow/90 bg-brand-yellow/10 px-2 py-0.5 rounded whitespace-nowrap">{vocab.chineseDefinition}</span>
+                            {isLearned && <CheckCircle2 size={16} className="text-green-500" />}
                         </div>
                     </div>
-                )}
-              </button>
-            ))}
+                    
+                    {selectedWord?.word === vocab.word && (
+                        <div className="mt-3 text-sm text-slate-300 animate-fade-in border-t border-slate-600 pt-2 text-left">
+                            <div className="flex items-center justify-between text-brand-blue font-mono mb-2">
+                                <span>/{vocab.pronunciation}/</span>
+                                <div className="p-1.5 bg-brand-blue/10 rounded-full hover:bg-brand-blue/20 cursor-pointer">
+                                    <Volume2 size={16} />
+                                </div>
+                            </div>
+                            
+                            {/* Primary Chinese Definition */}
+                            <p className="text-lg font-bold text-brand-yellow mb-1">{vocab.chineseDefinition}</p>
+                            
+                            {/* English Definition */}
+                            <p className="italic mb-3 text-slate-400">"{vocab.definition}"</p>
+                            
+                            {/* Examples */}
+                            <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-600">
+                                <p className="text-slate-200 mb-2 leading-snug">
+                                    <span className="font-bold text-brand-yellow mr-1">Ex:</span> 
+                                    {vocab.exampleSentence}
+                                </p>
+                                <p className="text-slate-500 text-xs pl-6 border-l-2 border-slate-700">
+                                    {vocab.chineseExample}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                  </button>
+                );
+            })}
           </div>
         </div>
       </div>
