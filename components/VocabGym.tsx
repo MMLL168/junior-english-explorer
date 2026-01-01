@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { generateVocabularyList } from '../services/geminiService';
 import { VocabularyWord } from '../types';
 import { Loader2, GraduationCap, Volume2, ArrowRight, RefreshCw, Book, Sparkles } from 'lucide-react';
@@ -17,6 +17,16 @@ export const VocabGym: React.FC<VocabGymProps> = ({ onEarnXP }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [sessionCompleted, setSessionCompleted] = useState(false);
+    
+    // Use ref to prevent garbage collection mid-speech
+    const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+    useEffect(() => {
+        return () => {
+            window.speechSynthesis.cancel();
+            utteranceRef.current = null;
+        };
+    }, []);
 
     const loadWords = async (selectedLevel: string) => {
         setLoading(true);
@@ -24,6 +34,7 @@ export const VocabGym: React.FC<VocabGymProps> = ({ onEarnXP }) => {
         setCurrentIndex(0);
         setIsFlipped(false);
         setSessionCompleted(false);
+        window.speechSynthesis.cancel();
 
         try {
             const newWords = await generateVocabularyList(selectedLevel);
@@ -45,9 +56,15 @@ export const VocabGym: React.FC<VocabGymProps> = ({ onEarnXP }) => {
     const playAudio = (e: React.MouseEvent, text: string) => {
         e.stopPropagation();
         window.speechSynthesis.cancel();
+        
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.8;
+        
+        utteranceRef.current = utterance;
+        utterance.onend = () => { utteranceRef.current = null; };
+        utterance.onerror = () => { utteranceRef.current = null; };
+        
         window.speechSynthesis.speak(utterance);
     };
 
@@ -72,6 +89,7 @@ export const VocabGym: React.FC<VocabGymProps> = ({ onEarnXP }) => {
         setLevel(null);
         setWords([]);
         setSessionCompleted(false);
+        window.speechSynthesis.cancel();
     };
 
     // --- View: Level Selection ---
